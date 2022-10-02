@@ -8,8 +8,4 @@
     <BaseOutputPath>..\Builds\BeatMapEvaluator\</BaseOutputPath>
   </PropertyGroup>
 
-  <ItemGroup>
-    <Folder Include="Source\" />
-  </ItemGroup>
-
 </Project>
