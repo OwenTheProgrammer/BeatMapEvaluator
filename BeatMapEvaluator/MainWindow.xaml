@@ -24,17 +24,41 @@
                 Background="#5F5DA6">
         </Border>
 
+        <StackPanel Grid.Column="2"
+                    VerticalAlignment="Center"
+                    FlowDirection="LeftToRight"
+                    Orientation="Horizontal"
+                    Margin="6">
+
+            <Button x:Name="diffButton_Easy" Style="{StaticResource DiffButton}"
+                    Background="#0ee095" Content="Easy"/>
+
+            <Button x:Name="diffButton_Normal" Style="{StaticResource DiffButton}"
+                    Background="#31B9FB" Content="Normal"/>
+
+            <Button x:Name="diffButton_Hard" Style="{StaticResource DiffButton}"
+                    Background="#ECB627" Content="Hard"/>
+
+            <Button x:Name="diffButton_Expert" Style="{StaticResource DiffButton}"
+                    Background="#FA1055" Content="Expert"/>
+
+            <Button x:Name="diffButton_ExpertPlus" Style="{StaticResource DiffButton}" 
+                    Background="#FFAE17DD" Content="Expert+"/>
+
+
+        </StackPanel>
+
         <!-- Main Panel -->
         <Grid Grid.Column="2" Grid.Row="2">
             <Grid.RowDefinitions>
                 <RowDefinition/>
                 <RowDefinition Height="150"/>
             </Grid.RowDefinitions>
-            
+
             <!-- Directive Panel -->
             <Border Background="#262626"
                     Margin="6">
-                
+
             </Border>
 
             <!-- Console Log -->
@@ -70,14 +94,19 @@
                 </Button>
 
             </StackPanel>
-            
+
             <!-- Queue List -->
-            <ListView Grid.Row="2"
+            <ListView x:Name="QueueList" Grid.Row="2"
                       Background="#262626"
                       Margin="6,6,0,6"
-                      BorderThickness="0"></ListView>
+                      BorderThickness="0"
+                      HorizontalContentAlignment="Center"
+                      ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                      ItemsSource="{Binding MapQueue}"
+                      ItemContainerStyle="{StaticResource QueuedMap}">
+            </ListView>
         </Grid>
-        
+
     </Grid>
 
 </Window>

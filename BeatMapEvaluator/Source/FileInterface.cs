@@ -7,6 +7,8 @@ using System.Net.Http;
 using System.IO;
 using System.IO.Compression;
 using Newtonsoft.Json; // :)
+using BeatMapEvaluator.Model;
+using System.Windows.Media.Imaging;
 
 namespace BeatMapEvaluator
 {
@@ -14,7 +16,7 @@ namespace BeatMapEvaluator
         private static readonly string beatSaverAPI = "https://beatsaver.com/api/download/key/";
         private static readonly HttpClient webClient = new HttpClient();
 
-        public static void unzipMap(string bsr, string targetDir) {
+        public static void UnzipMap(string bsr, string targetDir) {
             string zipFileName = bsr + ".zip";
             string zipPath = Path.Combine(targetDir, zipFileName);
             string extractDir = Path.Combine(targetDir, bsr);
@@ -30,7 +32,7 @@ namespace BeatMapEvaluator
             }
             UserConsole.Log("Map unzipped.");
         }
-        public static async Task downloadBSR(string bsr, string targetDir) {
+        public static async Task DownloadBSR(string bsr, string targetDir) {
             string zipFileName = bsr + ".zip";
             string zipPath = Path.Combine(targetDir, zipFileName);
             Uri urlHandle = new Uri(beatSaverAPI + bsr);
@@ -47,9 +49,9 @@ namespace BeatMapEvaluator
                 UserConsole.Log($"Error: {err.Message}");
                 throw;
             }
-            unzipMap(bsr, targetDir);
+            UnzipMap(bsr, targetDir);
         }
-        public static Task<json_MapInfo?> parseInfoFile(string mapDirectory) {
+        public static Task<json_MapInfo> ParseInfoFile(string mapDirectory) {
             string infoFilePath = Path.Combine(mapDirectory, "Info.dat");
             if(!File.Exists(infoFilePath)) {
                 UserConsole.Log("Error: Failed to find Info.dat file.");
@@ -59,12 +61,34 @@ namespace BeatMapEvaluator
             UserConsole.Log("Reading \'Info.dat\' ..");
             string infoFileData = File.ReadAllText(infoFilePath);
             var infoFile = JsonConvert.DeserializeObject<json_MapInfo>(infoFileData);
+            infoFile.FileContextPath = mapDirectory;
 
             UserConsole.Log("Parsed \'Info.dat\'.");
             return Task.FromResult(infoFile);
         }
+        
+        public static MapQueueModel CreateMapListItem(json_MapInfo info) {
+            MapQueueModel DisplayItem = new MapQueueModel();
+            string ImagePath = "";
 
-        public static void deleteDirFull(string dirPath) {
+            if(info._coverImageFilename != null) {
+                ImagePath = Path.Combine(info.FileContextPath, info._coverImageFilename);
+                DisplayItem.MapProfile.BeginInit();
+                DisplayItem.MapProfile.CacheOption = BitmapCacheOption.OnLoad;
+                DisplayItem.MapProfile.UriSource = new Uri(ImagePath);
+                DisplayItem.MapProfile.EndInit();
+            } else {
+                UserConsole.Log($"Failed to find profile for map {info._songName}");
+            }
+
+            DisplayItem.MapSongName = info._songName ?? "<NO SONG>";
+            DisplayItem.MapSongSubName = info._songSubName ?? "";
+            DisplayItem.MapAuthors = info._levelAuthorName ?? "<NO AUTHOR>";
+            return DisplayItem;
+        }
+
+
+        public static void DeleteDir_Full(string dirPath) {
             DirectoryInfo info = new DirectoryInfo(dirPath);
             try {
                 foreach(FileInfo file in info.GetFiles())
