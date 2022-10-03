@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using System.Net.Http;
 using System.IO;
 using System.IO.Compression;
+using Newtonsoft.Json; // :)
 
 namespace BeatMapEvaluator
 {
@@ -47,6 +48,20 @@ namespace BeatMapEvaluator
                 throw;
             }
             unzipMap(bsr, targetDir);
+        }
+        public static Task<json_MapInfo?> parseInfoFile(string mapDirectory) {
+            string infoFilePath = Path.Combine(mapDirectory, "Info.dat");
+            if(!File.Exists(infoFilePath)) {
+                UserConsole.Log("Error: Failed to find Info.dat file.");
+                throw new FileNotFoundException();
+            }
+
+            UserConsole.Log("Reading \'Info.dat\' ..");
+            string infoFileData = File.ReadAllText(infoFilePath);
+            var infoFile = JsonConvert.DeserializeObject<json_MapInfo>(infoFileData);
+
+            UserConsole.Log("Parsed \'Info.dat\'.");
+            return Task.FromResult(infoFile);
         }
 
         public static void deleteDirFull(string dirPath) {

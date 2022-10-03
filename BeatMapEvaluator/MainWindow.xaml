@@ -9,7 +9,7 @@
         MinHeight="520"
         MinWidth="864"
         Background="#303030"
-        ResizeMode="CanResize">
+        ResizeMode="CanResize" Closing="onAppQuit">
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="50"/>
@@ -41,7 +41,8 @@
             <Border Background="#0D0D0D"
                     Margin="6, 0, 6, 6"
                     Grid.Row="2">
-                <TextBlock Background="Transparent"
+                <TextBlock x:Name="ConsoleText" 
+                           Background="Transparent"
                            Foreground="#FAFAFA"
                            FontSize="16"
                            Padding="4"
@@ -65,7 +66,7 @@
                         Height="50" Margin="0"
                         Background="#404040"
                         Foreground="#FAFAFA"
-                        FontSize="24">
+                        FontSize="24" Click="evaluateCode_OnClick">
                 </Button>
 
             </StackPanel>
