@@ -14,6 +14,7 @@ using System.Windows.Navigation;
 using System.IO;
 using BeatMapEvaluator.Model;
 using System.Collections.ObjectModel;
+using Newtonsoft.Json;
 
 namespace BeatMapEvaluator
 {
@@ -54,16 +55,26 @@ namespace BeatMapEvaluator
 
             try {
                 await FileInterface.DownloadBSR(bsr, appTemp);
-                json_MapInfo info = await FileInterface.ParseInfoFile(Path.Combine(appTemp, bsr + '\\'));
-                var mapReq = await EvalLogic.mapHasRequirements(info.standardBeatmap._difficultyBeatmaps);
+                string mapFolder = Path.Combine(appTemp, bsr + '\\');
+                json_MapInfo info = await FileInterface.ParseInfoFile(mapFolder);
+                string songPath = Path.Combine(mapFolder, info._songFilename);
+
+                var diff = info.standardBeatmap._diffMaps[0];
+
+                string diffPath = Path.Combine(mapFolder, diff._beatmapFilename);
+                MapStorageLayout layout = await FileInterface.InterpretMapFile(diffPath);
+                layout.AudioLength = AudioLib.GetAudioLength(songPath);
+                layout.noteOffset = diff._noteOffset;
+                layout.bpm = info._bpm;
+                layout.njs = diff._njs;
+
+                UserConsole.Log("Map loaded.");
 
                 MapQueue.Add(FileInterface.CreateMapListItem(info));
             } catch(Exception err) {
                 UserConsole.Log($"Error: {err.Message}");
                 return;
             }
-
-            //var Array = await EvalLogic.mapHasRequirements(info._difficultyBeatmapSets[0]._difficultyBeatmaps);
         }
 
         private void updateUserLog(string ctx) => ConsoleText.Text = ctx;

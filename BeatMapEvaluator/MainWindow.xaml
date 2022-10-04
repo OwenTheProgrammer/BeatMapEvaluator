@@ -68,6 +68,7 @@
                         <RowDefinition/>
                     </Grid.RowDefinitions>
 
+                    <!-- Song Title -->
                     <StackPanel Orientation="Horizontal">
                         <Image x:Name="evc_Profile"
                            Width="64" Height="64"
@@ -79,12 +80,14 @@
                         </StackPanel>
                     </StackPanel>
 
+                    <!-- Left Song Info -->
                     <StackPanel Orientation="Vertical"
                                 Grid.Row="1"
                                 Margin="4">
                         <TextBlock x:Name="evc_NPS" Text="Notes/Second:" Foreground="White"/>
                         <TextBlock x:Name="evc_JD" Text="JD:" Foreground="White"/>
                     </StackPanel>
+                    
                 </Grid>
                 
             </Border>

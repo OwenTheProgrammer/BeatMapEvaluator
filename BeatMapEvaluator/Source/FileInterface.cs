@@ -64,22 +64,47 @@ namespace BeatMapEvaluator
             infoFile.mapContextDir = mapDirectory;
 
             //Find the standard beatmap (I hate the length)
-            if(infoFile._difficultyBeatmapSets != null) {
+            if(infoFile.beatmapSets != null) {
                 infoFile.standardBeatmap =
-                infoFile._difficultyBeatmapSets.Where(set =>
-                        set._beatmapCharacteristicName.Equals("Standard"))
+                infoFile.beatmapSets.Where(set =>
+                        set._mapType.Equals("Standard"))
                         .First();
             } else {
                 UserConsole.Log($"{infoFile._songName} has no maps.");
             }
-            if(!infoFile.standardBeatmap._beatmapCharacteristicName.Equals("Standard")) {
+            if(!infoFile.standardBeatmap._mapType.Equals("Standard")) {
                 UserConsole.Log($"{infoFile._songName} has no standard map.");
             }
 
             UserConsole.Log("Parsed \'Info.dat\'.");
             return Task.FromResult(infoFile);
         }
-        
+        public static Task<MapStorageLayout> InterpretMapFile(string mapDiffPath) {
+            string fileData = File.ReadAllText(mapDiffPath);
+            json_DiffFileV2 diff = JsonConvert.DeserializeObject<json_DiffFileV2>(fileData);
+            diff.noteCount = diff._notes.Length;
+            diff.obstacleCount = diff._obstacles.Length;
+
+            UserConsole.Log("Loading map data to table..");
+            //Parallelization
+            Task[] LoaderTasks = new Task[] {
+                EvalLogic.LoadNotesToTable(diff),
+                EvalLogic.LoadObstaclesToTable(diff)
+            };
+            try {
+                Task.WaitAll(LoaderTasks);
+            } catch(AggregateException ae) {
+                UserConsole.Log("Error: Problem parsing the diff file.");
+                throw ae.Flatten();
+            }
+            MapStorageLayout MapData = new MapStorageLayout();
+            MapData.noteCache = ((Task<Dictionary<float, List<json_MapNote>>>)LoaderTasks[0]).Result;
+            MapData.obstacleCache = ((Task<Dictionary<float, List<json_MapObstacle>>>)LoaderTasks[1]).Result;
+            MapData.noteKeys = new List<float>(MapData.noteCache.Keys).ToArray();
+            MapData.obstacleKeys = new List<float>(MapData.obstacleCache.Keys).ToArray();
+            return Task.FromResult(MapData);
+        }
+
         public static MapQueueModel CreateMapListItem(json_MapInfo info) {
             MapQueueModel DisplayItem = new MapQueueModel();
             string ImagePath = "";
