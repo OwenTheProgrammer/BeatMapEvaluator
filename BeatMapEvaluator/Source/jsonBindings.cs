@@ -9,7 +9,7 @@ namespace BeatMapEvaluator
     #region Info.dat json objects
     //Based off: https://bsmg.wiki/mapping/map-format.html#info-dat
     internal class json_MapInfo {
-        public string FileContextPath;
+        public string mapContextDir;
         public string? _version { get; set; }
         
         public string? _songName { get; set; }
@@ -23,6 +23,8 @@ namespace BeatMapEvaluator
         public float _songTimeOffset { get; set; }
 
         public json_beatMapSet[]? _difficultyBeatmapSets { get; set; }
+
+        public json_beatMapSet? standardBeatmap;
     }
 
     //Based off: https://bsmg.wiki/mapping/map-format.html#difficulty-beatmap-sets

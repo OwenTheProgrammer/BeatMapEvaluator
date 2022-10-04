@@ -1,0 +1,5 @@
+﻿[*.cs]
+
+//I dont wanna fuckin hear it, I know it can be null.
+# CS8602: Dereference of a possibly null reference.
+dotnet_diagnostic.CS8602.severity = none

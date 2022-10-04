@@ -8,7 +8,7 @@ namespace BeatMapEvaluator
 {
     internal class UserConsole {
         private readonly static string logStampFormat = @"hh:mm:ss";
-        private static string[] consoleBuffer = new string[4];
+        private static string[] consoleBuffer = new string[7];
 
         public delegate void updateStringGUI(string ctx);
         public static updateStringGUI? onConsoleUpdate = null;

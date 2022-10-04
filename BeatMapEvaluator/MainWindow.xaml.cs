@@ -42,9 +42,21 @@ namespace BeatMapEvaluator
         //At the moment the user can press the button as many
         //times as they want... das bad
         private async void evaluateCode_OnClick(object sender, RoutedEventArgs e) {
+            string bsr = bsrBox.Text;
+            if(bsr == null || bsr.Equals("")) {
+                UserConsole.Log("BSR code null.");
+                return;
+            }
+            if(Directory.Exists(Path.Combine(appTemp, bsr))) {
+                UserConsole.Log($"{bsrBox.Text} has already been loaded.");
+                return;
+            }
+
             try {
-                await FileInterface.DownloadBSR("1e6ff", appTemp);
-                json_MapInfo info = await FileInterface.ParseInfoFile(Path.Combine(appTemp, "1e6ff\\"));
+                await FileInterface.DownloadBSR(bsr, appTemp);
+                json_MapInfo info = await FileInterface.ParseInfoFile(Path.Combine(appTemp, bsr + '\\'));
+                var mapReq = await EvalLogic.mapHasRequirements(info.standardBeatmap._difficultyBeatmaps);
+
                 MapQueue.Add(FileInterface.CreateMapListItem(info));
             } catch(Exception err) {
                 UserConsole.Log($"Error: {err.Message}");
@@ -59,6 +71,10 @@ namespace BeatMapEvaluator
             MapQueue.Clear();
             UserConsole.Log("Clearing temporary directory..");
             FileInterface.DeleteDir_Full(appTemp);
+        }
+
+        private void QueueList_SelectionChanged(object sender, SelectionChangedEventArgs e) {
+            UserConsole.Log("Selected");
         }
     }
 }

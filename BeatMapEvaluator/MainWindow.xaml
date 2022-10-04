@@ -52,13 +52,41 @@
         <Grid Grid.Column="2" Grid.Row="2">
             <Grid.RowDefinitions>
                 <RowDefinition/>
-                <RowDefinition Height="150"/>
+                <RowDefinition Height="180"/>
             </Grid.RowDefinitions>
 
             <!-- Directive Panel -->
             <Border Background="#262626"
                     Margin="6">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition/>
+                        <ColumnDefinition Width="1.4*"/>
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="0.22*"/>
+                        <RowDefinition/>
+                    </Grid.RowDefinitions>
 
+                    <StackPanel Orientation="Horizontal">
+                        <Image x:Name="evc_Profile"
+                           Width="64" Height="64"
+                           HorizontalAlignment="Left"/>
+
+                        <StackPanel Orientation="Vertical">
+                            <Label x:Name="evc_SongName" Content="Song name" FontSize="20" Foreground="White"/>
+                            <Label x:Name="evc_SongDiff" Content="Difficulty" Foreground="White"/>
+                        </StackPanel>
+                    </StackPanel>
+
+                    <StackPanel Orientation="Vertical"
+                                Grid.Row="1"
+                                Margin="4">
+                        <TextBlock x:Name="evc_NPS" Text="Notes/Second:" Foreground="White"/>
+                        <TextBlock x:Name="evc_JD" Text="JD:" Foreground="White"/>
+                    </StackPanel>
+                </Grid>
+                
             </Border>
 
             <!-- Console Log -->
@@ -92,6 +120,10 @@
                         Foreground="#FAFAFA"
                         FontSize="24" Click="evaluateCode_OnClick">
                 </Button>
+                <TextBox x:Name="bsrBox" TextWrapping="NoWrap"
+                         Text="1e6ff" Width="120"
+                         Margin="5"
+                         HorizontalAlignment="Left"/>
 
             </StackPanel>
 
@@ -103,7 +135,7 @@
                       HorizontalContentAlignment="Center"
                       ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                       ItemsSource="{Binding MapQueue}"
-                      ItemContainerStyle="{StaticResource QueuedMap}">
+                      ItemContainerStyle="{StaticResource QueuedMap}" SelectionChanged="QueueList_SelectionChanged">
             </ListView>
         </Grid>
 

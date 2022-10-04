@@ -61,7 +61,20 @@ namespace BeatMapEvaluator
             UserConsole.Log("Reading \'Info.dat\' ..");
             string infoFileData = File.ReadAllText(infoFilePath);
             var infoFile = JsonConvert.DeserializeObject<json_MapInfo>(infoFileData);
-            infoFile.FileContextPath = mapDirectory;
+            infoFile.mapContextDir = mapDirectory;
+
+            //Find the standard beatmap (I hate the length)
+            if(infoFile._difficultyBeatmapSets != null) {
+                infoFile.standardBeatmap =
+                infoFile._difficultyBeatmapSets.Where(set =>
+                        set._beatmapCharacteristicName.Equals("Standard"))
+                        .First();
+            } else {
+                UserConsole.Log($"{infoFile._songName} has no maps.");
+            }
+            if(!infoFile.standardBeatmap._beatmapCharacteristicName.Equals("Standard")) {
+                UserConsole.Log($"{infoFile._songName} has no standard map.");
+            }
 
             UserConsole.Log("Parsed \'Info.dat\'.");
             return Task.FromResult(infoFile);
@@ -72,7 +85,7 @@ namespace BeatMapEvaluator
             string ImagePath = "";
 
             if(info._coverImageFilename != null) {
-                ImagePath = Path.Combine(info.FileContextPath, info._coverImageFilename);
+                ImagePath = Path.Combine(info.mapContextDir, info._coverImageFilename);
                 DisplayItem.MapProfile.BeginInit();
                 DisplayItem.MapProfile.CacheOption = BitmapCacheOption.OnLoad;
                 DisplayItem.MapProfile.UriSource = new Uri(ImagePath);
