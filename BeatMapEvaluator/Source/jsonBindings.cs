@@ -9,8 +9,10 @@ namespace BeatMapEvaluator
 {
     #region Info.dat json objects
     //Based off: https://bsmg.wiki/mapping/map-format.html#info-dat
-    internal class json_MapInfo {
-        public string mapContextDir;
+    public class json_MapInfo {
+        public string? mapContextDir;
+        public string? songFilePath;
+
         public string? _version { get; set; }
         
         public string? _songName { get; set; }
@@ -32,7 +34,7 @@ namespace BeatMapEvaluator
     }
 
     //Based off: https://bsmg.wiki/mapping/map-format.html#difficulty-beatmap-sets
-    internal class json_beatMapSet {
+    public class json_beatMapSet {
         [JsonProperty("_beatmapCharacteristicName")]
         public string? _mapType { get; set; }
         [JsonProperty("_difficultyBeatmaps")]
@@ -49,6 +51,8 @@ namespace BeatMapEvaluator
         [JsonProperty("_noteJumpStartBeatOffset")]
         public float _noteOffset { get; set; }
         public dynamic? _customData { get; set; }
+
+        public float bpm;
     }
     #endregion //Info.dat
 
@@ -82,6 +86,7 @@ namespace BeatMapEvaluator
         public NoteCutDirection _cutDirection { get; set; }
 
         public int cellIndex;
+        public float actualTime;
     }
 
     public enum ObstacleType {
@@ -94,6 +99,10 @@ namespace BeatMapEvaluator
         public ObstacleType _type { get; set; }
         public float _duration { get; set; }
         public int _width { get; set; }
+        
+        public bool isInteractive;
+        public bool isShortWall;
+        public float actualTime;
     }
 
     #endregion

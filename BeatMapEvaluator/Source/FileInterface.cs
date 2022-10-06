@@ -60,10 +60,11 @@ namespace BeatMapEvaluator
 
             UserConsole.Log("Reading \'Info.dat\' ..");
             string infoFileData = File.ReadAllText(infoFilePath);
-            var infoFile = JsonConvert.DeserializeObject<json_MapInfo>(infoFileData);
+            json_MapInfo infoFile = JsonConvert.DeserializeObject<json_MapInfo>(infoFileData);
+            infoFile.songFilePath = Path.Combine(mapDirectory, infoFile._songFilename);
             infoFile.mapContextDir = mapDirectory;
 
-            //Find the standard beatmap (I hate the length)
+            //Find the standard beatmap
             if(infoFile.beatmapSets != null) {
                 infoFile.standardBeatmap =
                 infoFile.beatmapSets.Where(set =>
@@ -72,36 +73,30 @@ namespace BeatMapEvaluator
             } else {
                 UserConsole.Log($"{infoFile._songName} has no maps.");
             }
-            if(!infoFile.standardBeatmap._mapType.Equals("Standard")) {
-                UserConsole.Log($"{infoFile._songName} has no standard map.");
-            }
 
             UserConsole.Log("Parsed \'Info.dat\'.");
             return Task.FromResult(infoFile);
         }
-        public static Task<MapStorageLayout> InterpretMapFile(string mapDiffPath) {
-            string fileData = File.ReadAllText(mapDiffPath);
+        public static Task<MapStorageLayout> InterpretMapFile(json_MapInfo info, int diffIndex) {
+            string mapFileName = info.standardBeatmap._diffMaps[diffIndex]._beatmapFilename;
+            string fileData = File.ReadAllText(Path.Combine(info.mapContextDir, mapFileName));
             json_DiffFileV2 diff = JsonConvert.DeserializeObject<json_DiffFileV2>(fileData);
             diff.noteCount = diff._notes.Length;
             diff.obstacleCount = diff._obstacles.Length;
 
             UserConsole.Log("Loading map data to table..");
             //Parallelization
-            Task[] LoaderTasks = new Task[] {
-                EvalLogic.LoadNotesToTable(diff),
-                EvalLogic.LoadObstaclesToTable(diff)
+            MapStorageLayout MapData = new MapStorageLayout(info, diff, diffIndex);
+            /*Task[] LoaderTasks = new Task[] {
+                EvalLogic.LoadNotesToTable(ref MapData, diff),
+                EvalLogic.LoadObstaclesToTable(ref MapData, diff)
             };
             try {
                 Task.WaitAll(LoaderTasks);
             } catch(AggregateException ae) {
                 UserConsole.Log("Error: Problem parsing the diff file.");
                 throw ae.Flatten();
-            }
-            MapStorageLayout MapData = new MapStorageLayout();
-            MapData.noteCache = ((Task<Dictionary<float, List<json_MapNote>>>)LoaderTasks[0]).Result;
-            MapData.obstacleCache = ((Task<Dictionary<float, List<json_MapObstacle>>>)LoaderTasks[1]).Result;
-            MapData.noteKeys = new List<float>(MapData.noteCache.Keys).ToArray();
-            MapData.obstacleKeys = new List<float>(MapData.obstacleCache.Keys).ToArray();
+            }*/
             return Task.FromResult(MapData);
         }
 

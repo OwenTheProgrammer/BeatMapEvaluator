@@ -3,6 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:custom="clr-namespace:BeatMapEvaluator.Themes"
         mc:Ignorable="d"
         Title="Map Evaluator"
         Height="650" Width="1100"
@@ -87,7 +88,8 @@
                         <TextBlock x:Name="evc_NPS" Text="Notes/Second:" Foreground="White"/>
                         <TextBlock x:Name="evc_JD" Text="JD:" Foreground="White"/>
                     </StackPanel>
-                    
+
+                    <custom:SwingPerSecondGraph x:Name="spsChartGraph" Grid.Row="2" Grid.Column="2"></custom:SwingPerSecondGraph>
                 </Grid>
                 
             </Border>

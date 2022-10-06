@@ -3,6 +3,7 @@ using System.CodeDom;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 using WMPLib;
@@ -35,5 +36,8 @@ namespace BeatMapEvaluator
             return 0.0f;
         }
 
+        public static bool Approx(float a, float b, float epsilon) {
+            return Math.Abs(a - b) <= epsilon;
+        }
     }
 }

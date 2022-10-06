@@ -15,6 +15,7 @@ using System.IO;
 using BeatMapEvaluator.Model;
 using System.Collections.ObjectModel;
 using Newtonsoft.Json;
+using BeatMapEvaluator.Themes;
 
 namespace BeatMapEvaluator
 {
@@ -56,17 +57,14 @@ namespace BeatMapEvaluator
             try {
                 await FileInterface.DownloadBSR(bsr, appTemp);
                 string mapFolder = Path.Combine(appTemp, bsr + '\\');
+
                 json_MapInfo info = await FileInterface.ParseInfoFile(mapFolder);
-                string songPath = Path.Combine(mapFolder, info._songFilename);
 
-                var diff = info.standardBeatmap._diffMaps[0];
+                MapStorageLayout layout = await FileInterface.InterpretMapFile(info, 0);
+                DiffCriteriaReport report = await layout.ProcessDiffRegistery();
 
-                string diffPath = Path.Combine(mapFolder, diff._beatmapFilename);
-                MapStorageLayout layout = await FileInterface.InterpretMapFile(diffPath);
-                layout.AudioLength = AudioLib.GetAudioLength(songPath);
-                layout.noteOffset = diff._noteOffset;
-                layout.bpm = info._bpm;
-                layout.njs = diff._njs;
+                spsChartGraph.spsData.Clear();
+                spsChartGraph.spsData.AddRange(report.swingsPerSecond);
 
                 UserConsole.Log("Map loaded.");
 
