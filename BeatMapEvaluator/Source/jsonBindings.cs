@@ -8,8 +8,17 @@ using System.Threading.Tasks;
 namespace BeatMapEvaluator
 {
     #region Info.dat json objects
+
+    [Flags] public enum MapDiffs {
+        NONE = 0,
+        Easy = 1<<0, Normal = 1<<1,
+        Hard = 1<<2, Expert = 1<<3,
+        ExpertPlus = 1<<4
+    };
+
     //Based off: https://bsmg.wiki/mapping/map-format.html#info-dat
     public class json_MapInfo {
+        public MapDiffs mapDifficulties;
         public string? mapContextDir;
         public string? songFilePath;
 
@@ -31,6 +40,7 @@ namespace BeatMapEvaluator
         public json_beatMapSet[]? beatmapSets { get; set; }
 
         public json_beatMapSet? standardBeatmap;
+        public string? mapBSR;
     }
 
     //Based off: https://bsmg.wiki/mapping/map-format.html#difficulty-beatmap-sets

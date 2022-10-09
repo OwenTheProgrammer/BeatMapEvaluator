@@ -31,20 +31,20 @@
                     Orientation="Horizontal"
                     Margin="6">
 
-            <Button x:Name="diffButton_Easy" Style="{StaticResource DiffButton}"
-                    Background="#0ee095" Content="Easy"/>
+            <Button x:Name="diffButton_Easy" Style="{StaticResource DiffButton}" Tag="1"
+                    Background="#0ee095" Content="Easy" Click="diffButton_OnClick"/>
 
-            <Button x:Name="diffButton_Normal" Style="{StaticResource DiffButton}"
-                    Background="#31B9FB" Content="Normal"/>
+            <Button x:Name="diffButton_Normal" Style="{StaticResource DiffButton}" Tag="3"
+                    Background="#31B9FB" Content="Normal" Click="diffButton_OnClick"/>
 
-            <Button x:Name="diffButton_Hard" Style="{StaticResource DiffButton}"
-                    Background="#ECB627" Content="Hard"/>
+            <Button x:Name="diffButton_Hard" Style="{StaticResource DiffButton}" Tag="5"
+                    Background="#ECB627" Content="Hard"  Click="diffButton_OnClick"/>
 
-            <Button x:Name="diffButton_Expert" Style="{StaticResource DiffButton}"
-                    Background="#FA1055" Content="Expert"/>
+            <Button x:Name="diffButton_Expert" Style="{StaticResource DiffButton}" Tag="7"
+                    Background="#FA1055" Content="Expert" Click="diffButton_OnClick"/>
 
-            <Button x:Name="diffButton_ExpertPlus" Style="{StaticResource DiffButton}" 
-                    Background="#FFAE17DD" Content="Expert+"/>
+            <Button x:Name="diffButton_ExpertPlus" Style="{StaticResource DiffButton}" Tag="9"
+                    Background="#FFAE17DD" Content="Expert+" Click="diffButton_OnClick"/>
 
 
         </StackPanel>

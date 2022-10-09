@@ -3,6 +3,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Printing;
@@ -24,8 +25,10 @@ namespace BeatMapEvaluator
     }
 
     public class MapStorageLayout {
+        public DiffCriteriaReport report;
         public json_beatMapDifficulty mapDiff;
         public json_DiffFileV2 diffFile;
+
         public Dictionary<float, List<json_MapNote>>? noteCache;
         public Dictionary<float, List<json_MapObstacle>>? obstacleCache;
         public float[]? noteKeys;
@@ -34,7 +37,7 @@ namespace BeatMapEvaluator
         public int actualNoteCount;
 
         public float AudioLength;
-        public float bpm, bps, njs;
+        public float bpm, bps, njs, nps;
         public float noteOffset;
         public float jumpDistance;
         public float reactionTime;
@@ -47,14 +50,15 @@ namespace BeatMapEvaluator
             bpm = info._bpm;
             bps = 60f / bpm;
             njs = mapDiff._njs;
+            nps = 0;
             noteOffset = mapDiff._noteOffset;
             jumpDistance = Utils.CalculateJD(bpm, njs, noteOffset);
             reactionTime = Utils.CalculateRT(jumpDistance, njs);
             diffFile = diff;
         }
 
-        public async Task<DiffCriteriaReport> ProcessDiffRegistery() {
-            DiffCriteriaReport report = new DiffCriteriaReport();
+        public async Task ProcessDiffRegistery() {
+            report = new DiffCriteriaReport();
             report.modsRequired = await Eval_ModsRequired();
 
             Task[] Loaders = new Task[] {
@@ -63,12 +67,10 @@ namespace BeatMapEvaluator
             };
             //Task noteLoader = Load_NotesToCache(diffFile);
             //Task wallLoader = Load_ObstaclesToCache(diffFile);
-            Task.WaitAll(Loaders);
 
+            nps = Calc_NotesPerSecond();
             report.swingsPerSecond = await Calc_SwingsPerSecond();
             UserConsole.Log("Finished");
-
-            return report;
         }
 
         public Task Load_NotesToCache(json_DiffFileV2 diff) { 
@@ -114,16 +116,6 @@ namespace BeatMapEvaluator
         public float Calc_NotesPerSecond() {
             return (float)actualNoteCount / AudioLength;
         }
-        public Task<List<string>> Eval_ModsRequired() {
-            List<string> Mods = new List<string>();
-            JObject? customData = (JObject?)mapDiff._customData;
-            if(customData != null) {
-                var t = customData.SelectToken("_requirements");
-                if(t != null)
-                    Mods.AddRange(t.ToObject<string[]>());
-            }
-            return Task.FromResult(Mods);
-        }
         public Task<int[]> Calc_SwingsPerSecond() {
             int cellCount = (int)Math.Ceiling(AudioLength);
             int[] segments = new int[cellCount];
@@ -139,6 +131,16 @@ namespace BeatMapEvaluator
                 }
             }
             return Task.FromResult(segments);
+        }
+        public Task<List<string>> Eval_ModsRequired() {
+            List<string> Mods = new List<string>();
+            JObject? customData = (JObject?)mapDiff._customData;
+            if(customData != null) {
+                var t = customData.SelectToken("_requirements");
+                if(t != null)
+                    Mods.AddRange(t.ToObject<string[]>());
+            }
+            return Task.FromResult(Mods);
         }
 
         public Task<List<json_MapNote>> Eval_NoteHotStart(float limit) {
@@ -174,6 +176,37 @@ namespace BeatMapEvaluator
             }
             return Task.FromResult(offenders);
         }
+        public Task<List<json_MapNote>> Eval_NoteWallIntersections() {
+            List<json_MapNote> offenders = new List<json_MapNote>();
+            foreach(var wallKey in obstacleCache) {
+                //Find the first key that is before the cache point
+                int noteIndex = 0;
+                foreach(float noteKey in noteKeys) {
+                    if(noteKey >= wallKey.Key)
+                        break;
+                    noteIndex++;
+                }
+                foreach(json_MapObstacle wall in wallKey.Value) {
+                    int xLength = wall._lineIndex + wall._width;
+                    float end = wall._time + wall._duration;
+                    float key = noteKeys[noteIndex];
+                    for(int i = noteIndex; key < end; i++) {
+                        foreach(var note in noteCache[key]) {
+                            bool isFullWall = wall._type == ObstacleType.FullWall;
+                            bool inLeftBound = note._lineIndex >= wall._lineIndex;
+                            bool inRightBound = note._lineIndex <= xLength;
+                            if(inLeftBound && inRightBound) {
+                                if(!isFullWall && note._lineLayer == 0)
+                                    continue;
+                                offenders.Add(note);
+                            }
+                        }
+                        key = noteKeys[noteIndex];
+                    }
+                }
+            }
+            return Task.FromResult(offenders);
+        }
 
         public Task<List<json_MapObstacle>> Eval_WallHotStart(float limit) {
             List<json_MapObstacle> offenders = new List<json_MapObstacle>();
@@ -196,7 +229,7 @@ namespace BeatMapEvaluator
             }
             return Task.FromResult(offenders);
         }
-        public Task<List<json_MapObstacle>> Eval_WallNegatives() {
+        public Task<List<json_MapObstacle>> Eval_WallDurations() {
             List<json_MapObstacle> offenders = new List<json_MapObstacle>();
 
             foreach(var wallList in obstacleCache) { 

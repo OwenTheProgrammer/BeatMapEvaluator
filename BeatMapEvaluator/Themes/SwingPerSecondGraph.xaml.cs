@@ -28,7 +28,7 @@ namespace BeatMapEvaluator.Themes
             InitializeComponent();
 
             spsData = new ChartValues<int>();
-            StepRate = 2;
+            StepRate = 5;
             DataContext = this;
             spsChart.Update(true);
         }

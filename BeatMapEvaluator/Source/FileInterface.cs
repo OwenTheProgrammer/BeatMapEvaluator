@@ -74,6 +74,8 @@ namespace BeatMapEvaluator
                 UserConsole.Log($"{infoFile._songName} has no maps.");
             }
 
+            infoFile.mapDifficulties = Utils.GetMapDifficulties(infoFile.standardBeatmap._diffMaps);
+
             UserConsole.Log("Parsed \'Info.dat\'.");
             return Task.FromResult(infoFile);
         }
@@ -104,6 +106,8 @@ namespace BeatMapEvaluator
             MapQueueModel DisplayItem = new MapQueueModel();
             string ImagePath = "";
 
+            DisplayItem.diffsAvailable = info.mapDifficulties;
+            DisplayItem.mapID = info.mapBSR;
             if(info._coverImageFilename != null) {
                 ImagePath = Path.Combine(info.mapContextDir, info._coverImageFilename);
                 DisplayItem.MapProfile.BeginInit();

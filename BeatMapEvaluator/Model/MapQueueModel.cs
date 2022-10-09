@@ -7,6 +7,9 @@ using System.Windows.Media.Imaging;
 namespace BeatMapEvaluator.Model
 {
     public class MapQueueModel {
+        public MapDiffs diffsAvailable { get; set; }
+        public string? mapID { get; set; }
+
         public BitmapImage MapProfile { get; set; }
         public string MapSongName { get; set; }
         public string MapSongSubName { get; set; }

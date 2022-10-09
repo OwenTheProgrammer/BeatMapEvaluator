@@ -11,6 +11,7 @@ using WMPLib;
 namespace BeatMapEvaluator
 {
     internal class Utils {
+
         //Some math wizard shit no one explained
         public static float CalculateJD(float bpm, float njs, float offset) {
             if(njs <= 0.01f) njs = 10.0f;
@@ -38,6 +39,23 @@ namespace BeatMapEvaluator
 
         public static bool Approx(float a, float b, float epsilon) {
             return Math.Abs(a - b) <= epsilon;
+        }
+
+        public static MapDiffs GetMapDifficulties(json_beatMapDifficulty[]? Sets) {
+            if(Sets == null)
+                return MapDiffs.NONE;
+
+            MapDiffs diffs = MapDiffs.NONE;
+            foreach(json_beatMapDifficulty set in Sets) {
+                switch(set._difficultyRank) {
+                    case 1: diffs |= MapDiffs.Easy; break;
+                    case 3: diffs |= MapDiffs.Normal; break;
+                    case 5: diffs |= MapDiffs.Hard; break;
+                    case 7: diffs |= MapDiffs.Expert; break;
+                    case 9: diffs |= MapDiffs.ExpertPlus; break;
+                }
+            }
+            return diffs;
         }
     }
 }

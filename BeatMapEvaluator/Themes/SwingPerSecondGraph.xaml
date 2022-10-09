@@ -16,7 +16,7 @@
         </Grid.RowDefinitions>
         <Border Grid.ColumnSpan="2"></Border>
         <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="25, 10">
-            <TextBlock FontSize="22" Foreground="White">Swings Per Second:</TextBlock>
+            <TextBlock FontSize="22" Foreground="White">Blocks Per Second:</TextBlock>
             </StackPanel>
         <lvc:CartesianChart Name="spsChart" Grid.Row="1" Margin="15">
             <lvc:CartesianChart.Series>
