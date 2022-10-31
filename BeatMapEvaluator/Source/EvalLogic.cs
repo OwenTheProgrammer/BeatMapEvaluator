@@ -41,7 +41,7 @@ namespace BeatMapEvaluator
         public static string[] diffColors = {"#BE1F46","#9CED9C","#713E93"};
 
         public int[] errors;
-        public int GetReportColor() {
+        public int GetReportStatus() {
             errors = new int[8];
             for(int i = 0; i < 8; i++)
                 errors[i] = -1;
@@ -63,6 +63,7 @@ namespace BeatMapEvaluator
             if(wall_OutOfRange != null)
                 errors[7] = wall_OutOfRange.Count;
 
+
             if(errors.Contains(-1)) return 2; //Error
             if(errors.All(e => e == 0)) return 1; //Good
             return 0; //Bad
@@ -71,7 +72,7 @@ namespace BeatMapEvaluator
 
     public class MapStorageLayout {
         public DiffCriteriaReport report;
-        public int reportColorIndex;
+        public int reportStatus;
         public json_beatMapDifficulty mapDiff;
         public json_DiffFileV2 diffFile;
 
@@ -91,7 +92,7 @@ namespace BeatMapEvaluator
 
         public MapStorageLayout(json_MapInfo info, json_DiffFileV2 diff, int diffIndex) {
             string songPath = Path.Combine(info.mapContextDir, info._songFilename);
-            reportColorIndex = -1;
+            reportStatus = -1;
             mapDiff = info.standardBeatmap._diffMaps[diffIndex];
             audioLength = AudioLib.GetAudioLength(songPath);
             bpm = info._bpm;
@@ -152,7 +153,7 @@ namespace BeatMapEvaluator
             try {report.note_failSwings = await Eval_FailSwings();} 
             catch {UserConsole.LogError($"[{bsr} > FailSwings]: Failed to evaluate.");}
             
-            reportColorIndex = report.GetReportColor();
+            reportStatus = report.GetReportStatus();
             UserConsole.Log($"[{bsr}]: Finished");
         }
 

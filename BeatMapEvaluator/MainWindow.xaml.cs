@@ -34,6 +34,8 @@ namespace BeatMapEvaluator
         private string logFile;
         private string logPath;
 
+        private string reportFolder;
+
         private int Work_Numerator; //Folder progress numerator
         private int Work_Denominator;   //Folder progress denominator
 
@@ -47,11 +49,16 @@ namespace BeatMapEvaluator
             string cd = Directory.GetCurrentDirectory();
             appTemp = Path.Combine(cd, "temp") + _ps;
             appLogsFolder = Path.Combine(cd, "logs") + _ps;
+            reportFolder = Path.Combine(cd, "reports") + _ps;
             UserConsole.onConsoleUpdate = new UserConsole.updateStringGUI(updateUserLog);
             UserConsole.onLogUpdate = new UserConsole.updateStringGUI(WriteToLogFile);
 
             if(!Directory.Exists(appLogsFolder))
                 Directory.CreateDirectory(appLogsFolder);
+
+            if(!Directory.Exists(reportFolder))
+                Directory.CreateDirectory(reportFolder);
+
             logFile = "log_" + DateTime.Now.ToString("hh_mm_ss") + ".txt";
             logPath = Path.Combine(appLogsFolder, logFile);
             
@@ -66,7 +73,7 @@ namespace BeatMapEvaluator
         private async Task evaluateMap(string mapFolder, string bsr) {
             json_MapInfo info = await FileInterface.ParseInfoFile(mapFolder, bsr);
 
-            int color = -1;
+            int status = -1;
             if(!evalStorage.ContainsKey(info.mapBSR) && info.mapDifficulties != MapDiffs.NONE) {
                 json_beatMapDifficulty[] diffRegistry = info.standardBeatmap._diffMaps;
                 evalStorage.Add(info.mapBSR, (info, new MapStorageLayout[5]));
@@ -82,15 +89,21 @@ namespace BeatMapEvaluator
                     }
                     int index = layout.mapDiff._difficultyRank / 2;
                     evalStorage[info.mapBSR].Item2[index] = layout;
-                    if(color == -1) {
-                        if(layout.reportColorIndex == 2) color = 2;
-                        if(layout.reportColorIndex == 0) color = 0;
+
+                    if(layout.reportStatus != 1) {
+                        string reportPath = Path.Combine(reportFolder, info.mapBSR + ".txt");
+                        await UserConsole.ExportReport(layout, info, reportPath);
+                    }
+
+                    if(status == -1) {
+                        if(layout.reportStatus == 2) status = 2;
+                        if(layout.reportStatus == 0) status = 0;
                     }
                 }
             }
-            if(color == -1) color = 1;
+            if(status == -1) status = 1;
             UserConsole.Log($"[{bsr}]: Map loaded.");
-            MapQueue.Add(FileInterface.CreateMapListItem(info, color));
+            MapQueue.Add(FileInterface.CreateMapListItem(info, status));
             Work_Numerator++;
             folderPerc.Content = Work_Numerator.ToString() + " / " + Work_Denominator.ToString();
         }
@@ -176,7 +189,7 @@ namespace BeatMapEvaluator
                 Brush[] colors = new Brush[5];
                 for(int i = 0; i < 5; i++) {
                     if(layout[i] == null) continue;
-                    string hex = DiffCriteriaReport.diffColors[layout[i].reportColorIndex];
+                    string hex = DiffCriteriaReport.diffColors[layout[i].reportStatus];
                     colors[i] = (Brush)converter.ConvertFromString(hex);
                 }
                 //Dont even think about it..
@@ -221,13 +234,13 @@ namespace BeatMapEvaluator
 
             int[] errorTable = report.errors;
 
-            int _hotStartCount = errorTable[0];
-            int _coldEndCount = errorTable[1];
-            int _interCount = errorTable[2];
-            int _wallWidth = errorTable[3];
-            int _failSwings = errorTable[4];
-            int _oorNote = errorTable[5];
-            int _oorWall = errorTable[6];
+            int _hotStartCount = errorTable[1];
+            int _coldEndCount = errorTable[2];
+            int _interCount = errorTable[3];
+            int _wallWidth = errorTable[4];
+            int _failSwings = errorTable[5];
+            int _oorNote = errorTable[6];
+            int _oorWall = errorTable[7];
 
             spsChartGraph.spsData.Clear();
             spsChartGraph.spsData.AddRange(layouts[sel].report.swingsPerSecond);
