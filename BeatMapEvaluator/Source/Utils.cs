@@ -57,5 +57,33 @@ namespace BeatMapEvaluator
             }
             return diffs;
         }
+
+        public static json_MapNote? GetAdjacentNote(List<json_MapNote> list, json_MapNote note, NoteCutDirection lookDir) {
+            int cell = note.cellIndex;
+
+            bool u = note._lineLayer != 2;  //Not the top most layer
+            bool d = note._lineLayer != 0;  //Not the bottom most layer
+            bool l = note._lineIndex != 0;  //Not the left most column
+            bool r = note._lineIndex != 3;  //Not the right most column
+
+            switch(lookDir) {
+                case NoteCutDirection.Up:   if(u) cell += 4; break;
+                case NoteCutDirection.Down: if(d) cell -= 4; break;
+                case NoteCutDirection.Left: if(l) cell -= 1; break;
+                case NoteCutDirection.Right: if(r) cell += 1; break;
+                case NoteCutDirection.UpLeft: if(u&&l) cell += 3; break;
+                case NoteCutDirection.UpRight: if(u&&r) cell += 5; break;
+                case NoteCutDirection.DownLeft: if(d&&l) cell -= 5; break;
+                case NoteCutDirection.DownRight:if(d&&r) cell -= 3; break;
+            }
+            //if testing inside of range
+            if(cell != note.cellIndex) { 
+                foreach(var test in list) { 
+                    if(test.cellIndex == cell)
+                        return test;
+                }   
+            }
+            return null;
+        }
     }
 }

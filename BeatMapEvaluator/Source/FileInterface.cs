@@ -9,6 +9,7 @@ using System.IO.Compression;
 using Newtonsoft.Json; // :)
 using BeatMapEvaluator.Model;
 using System.Windows.Media.Imaging;
+using System.Windows.Media;
 
 namespace BeatMapEvaluator
 {
@@ -16,7 +17,7 @@ namespace BeatMapEvaluator
         private static readonly string beatSaverAPI = "https://beatsaver.com/api/download/key/";
         private static readonly HttpClient webClient = new HttpClient();
 
-        public static void UnzipMap(string bsr, string targetDir) {
+        public static Task UnzipMap(string bsr, string targetDir) {
             string zipFileName = bsr + ".zip";
             string zipPath = Path.Combine(targetDir, zipFileName);
             string extractDir = Path.Combine(targetDir, bsr);
@@ -31,6 +32,7 @@ namespace BeatMapEvaluator
                 throw;
             }
             UserConsole.Log("Map unzipped.");
+            return Task.CompletedTask;
         }
         public static async Task DownloadBSR(string bsr, string targetDir) {
             string zipFileName = bsr + ".zip";
@@ -46,63 +48,70 @@ namespace BeatMapEvaluator
                     stream.Close();
                 }
             } catch(Exception err) {
-                UserConsole.Log($"Error: {err.Message}");
+                UserConsole.LogError($"Error: {err.Message}");
                 throw;
             }
-            UnzipMap(bsr, targetDir);
+            await UnzipMap(bsr, targetDir);
         }
-        public static Task<json_MapInfo> ParseInfoFile(string mapDirectory) {
+        public static async Task<json_MapInfo> ParseInfoFile(string mapDirectory, string bsr) {
             string infoFilePath = Path.Combine(mapDirectory, "Info.dat");
             if(!File.Exists(infoFilePath)) {
-                UserConsole.Log("Error: Failed to find Info.dat file.");
+                UserConsole.LogError($"[{bsr}] Error: Failed to find Info.dat file.");
                 throw new FileNotFoundException();
             }
 
-            UserConsole.Log("Reading \'Info.dat\' ..");
+            UserConsole.Log($"[{bsr}]: Reading \'Info.dat\' ..");
             string infoFileData = File.ReadAllText(infoFilePath);
-            json_MapInfo infoFile = JsonConvert.DeserializeObject<json_MapInfo>(infoFileData);
+
+            var loadTask = Task.Run(() => JsonConvert.DeserializeObject<json_MapInfo>(infoFileData));
+            json_MapInfo infoFile = await loadTask;
+            infoFile.mapBSR = bsr;
             infoFile.songFilePath = Path.Combine(mapDirectory, infoFile._songFilename);
             infoFile.mapContextDir = mapDirectory;
 
             //Find the standard beatmap
             if(infoFile.beatmapSets != null) {
-                infoFile.standardBeatmap =
-                infoFile.beatmapSets.Where(set =>
-                        set._mapType.Equals("Standard"))
-                        .First();
-            } else {
-                UserConsole.Log($"{infoFile._songName} has no maps.");
+                foreach(var set in infoFile.beatmapSets) { 
+                    if(set._mapType.Equals("Standard")) {
+                        infoFile.standardBeatmap = set;
+                    }
+                }
+            }
+            if(infoFile.beatmapSets == null || 
+               infoFile.standardBeatmap == null) {
+                UserConsole.Log($"[{bsr}]: {infoFile._songName} has no maps.");
+                return infoFile;
             }
 
             infoFile.mapDifficulties = Utils.GetMapDifficulties(infoFile.standardBeatmap._diffMaps);
 
-            UserConsole.Log("Parsed \'Info.dat\'.");
-            return Task.FromResult(infoFile);
+            UserConsole.Log($"[{bsr}]: Parsed \'Info.dat\'.");
+            return infoFile;
         }
-        public static Task<MapStorageLayout> InterpretMapFile(json_MapInfo info, int diffIndex) {
+        public static async Task<MapStorageLayout?> InterpretMapFile(json_MapInfo info, int diffIndex) {
             string mapFileName = info.standardBeatmap._diffMaps[diffIndex]._beatmapFilename;
             string fileData = File.ReadAllText(Path.Combine(info.mapContextDir, mapFileName));
-            json_DiffFileV2 diff = JsonConvert.DeserializeObject<json_DiffFileV2>(fileData);
+            if(fileData == null) {
+                UserConsole.LogError($"[{info.mapBSR}]: Error no map file data.");
+                return null;
+            }
+
+            var rawRead = Task.Run(()=>JsonConvert.DeserializeObject<json_DiffFileV2>(fileData));
+            json_DiffFileV2? diff = await rawRead;
+            // In case it still fills null for some reason
+            if(diff == null || 
+               diff._notes == null || 
+               diff._obstacles == null)
+                return null;
             diff.noteCount = diff._notes.Length;
             diff.obstacleCount = diff._obstacles.Length;
 
-            UserConsole.Log("Loading map data to table..");
-            //Parallelization
+            UserConsole.Log($"[{info.mapBSR}]: Loading map data to table..");
             MapStorageLayout MapData = new MapStorageLayout(info, diff, diffIndex);
-            /*Task[] LoaderTasks = new Task[] {
-                EvalLogic.LoadNotesToTable(ref MapData, diff),
-                EvalLogic.LoadObstaclesToTable(ref MapData, diff)
-            };
-            try {
-                Task.WaitAll(LoaderTasks);
-            } catch(AggregateException ae) {
-                UserConsole.Log("Error: Problem parsing the diff file.");
-                throw ae.Flatten();
-            }*/
-            return Task.FromResult(MapData);
+            return MapData;
         }
 
-        public static MapQueueModel CreateMapListItem(json_MapInfo info) {
+        public static MapQueueModel CreateMapListItem(json_MapInfo info, int color) {
             MapQueueModel DisplayItem = new MapQueueModel();
             string ImagePath = "";
 
@@ -110,21 +119,31 @@ namespace BeatMapEvaluator
             DisplayItem.mapID = info.mapBSR;
             if(info._coverImageFilename != null) {
                 ImagePath = Path.Combine(info.mapContextDir, info._coverImageFilename);
-                DisplayItem.MapProfile.BeginInit();
-                DisplayItem.MapProfile.CacheOption = BitmapCacheOption.OnLoad;
-                DisplayItem.MapProfile.UriSource = new Uri(ImagePath);
-                DisplayItem.MapProfile.EndInit();
+                try {
+                    //Build the image file
+                    DisplayItem.MapProfile.BeginInit();
+                    DisplayItem.MapProfile.CacheOption = BitmapCacheOption.OnLoad;
+                    DisplayItem.MapProfile.UriSource = new Uri(ImagePath);
+                    DisplayItem.MapProfile.EndInit();
+                } catch {
+                    UserConsole.LogError($"Failed to load: \"{info._coverImageFilename}\"");
+                    DisplayItem.MapProfile = new BitmapImage();
+                }
             } else {
-                UserConsole.Log($"Failed to find profile for map {info._songName}");
+                UserConsole.LogError($"Failed to find profile for map {info._songName}");
             }
+
+            var conv = new BrushConverter();
+            string diffHex = DiffCriteriaReport.diffColors[color];
 
             DisplayItem.MapSongName = info._songName ?? "<NO SONG>";
             DisplayItem.MapSongSubName = info._songSubName ?? "";
             DisplayItem.MapAuthors = info._levelAuthorName ?? "<NO AUTHOR>";
+            DisplayItem.EvalColor = (Brush)conv.ConvertFromString(diffHex);
             return DisplayItem;
         }
 
-
+        //Delete directory / recursive
         public static void DeleteDir_Full(string dirPath) {
             DirectoryInfo info = new DirectoryInfo(dirPath);
             try {
@@ -134,7 +153,7 @@ namespace BeatMapEvaluator
                     dir.Delete(true);
                 Directory.Delete(dirPath);
             } catch(Exception err) {
-                UserConsole.Log($"Error: {err.Message}");
+                UserConsole.LogError($"Error: {err.Message}");
                 throw;
             }
             UserConsole.Log("Removed temp directory.");

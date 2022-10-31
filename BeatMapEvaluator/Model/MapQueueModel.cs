@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
 namespace BeatMapEvaluator.Model
@@ -14,12 +15,14 @@ namespace BeatMapEvaluator.Model
         public string MapSongName { get; set; }
         public string MapSongSubName { get; set; }
         public string MapAuthors { get; set; }
+        public Brush EvalColor { get; set; }
 
         public MapQueueModel() {
             MapProfile = new BitmapImage();
             MapSongName = "Loading";
             MapSongSubName = "";
             MapAuthors = "";
+            EvalColor = Brushes.Gray;
         }
     }
 }

@@ -78,6 +78,7 @@ namespace BeatMapEvaluator
         DotNote=8
     };
 
+    //Based off: https://bsmg.wiki/mapping/map-format.html#difficulty-file-v2
     public class json_DiffFileV2 {
         public string? _version { get; set; }
         public json_MapNote[]? _notes { get; set; }
@@ -112,7 +113,8 @@ namespace BeatMapEvaluator
         
         public bool isInteractive;
         public bool isShortWall;
-        public float actualTime;
+        public float actualTime;    //The time in seconds
+        public float endTime;       //The end point of a wall in beats
     }
 
     #endregion

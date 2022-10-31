@@ -85,13 +85,23 @@
                     <StackPanel Orientation="Vertical"
                                 Grid.Row="1"
                                 Margin="4">
-                        <TextBlock x:Name="evc_NPS" Text="Notes/Second:" Foreground="White"/>
-                        <TextBlock x:Name="evc_JD" Text="JD:" Foreground="White"/>
+                        <TextBlock x:Name="evc_NPS" Text="Notes/Second:" Foreground="White" Padding="2"/>
+                        <TextBlock x:Name="evc_JD" Text="JD:" Foreground="White" Padding="2"/>
+                        <TextBlock x:Name="evc_NJS" Text="NJS:" Foreground="White" Padding="2"/>
+                        <TextBlock x:Name="evc_RT" Text="Reaction time:" Foreground="White" Padding="2"/>
+                        <TextBlock x:Name="evc_OF" Text="Offset:" Foreground="White" Padding="2"/>
+                        <TextBlock x:Name="evc_BPM" Text="BPM:" Foreground="White" Padding="2"/>
+                        <TextBlock x:Name="evc_Mods" Text="Mods:" Foreground="White" Padding="2"/>
+                        <TextBlock x:Name="evc_HotStart" Text="Hot Starts:" Foreground="White" Padding="2"/>
+                        <TextBlock x:Name="evc_ColdEnd" Text="Cold Ends:" Foreground="White" Padding="2"/>
+                        <TextBlock x:Name="evc_Intersections" Text="Intersections:" Foreground="White" Padding="2"/>
+                        <TextBlock x:Name="evc_WallWidth" Text="Wall Widths:" Foreground="White" Padding="2"/>
+                        <TextBlock x:Name="evc_FailSwings" Text="Fail Swings:" Foreground="White" Padding="2"/>
+                        <TextBlock x:Name="evc_OOR" Text="Out-Of-Range:" Foreground="White" Padding="2"/>
                     </StackPanel>
-
-                    <custom:SwingPerSecondGraph x:Name="spsChartGraph" Grid.Row="2" Grid.Column="2"></custom:SwingPerSecondGraph>
+                    <custom:SwingPerSecondGraph x:Name="spsChartGraph" Grid.Row="2" Grid.Column="2"/>
                 </Grid>
-                
+
             </Border>
 
             <!-- Console Log -->
@@ -117,19 +127,54 @@
             <!-- Button Panel -->
             <StackPanel Background="#303030"
                         Margin="6,6,0,0">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="11*"/>
+                        <ColumnDefinition Width="3*"/>
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="0.33*"/>
+                        <RowDefinition Height="0.33*"/>
+                        <RowDefinition Height="0.33*"/>
+                    </Grid.RowDefinitions>
 
-                <Button Grid.Column="0"
+                    <Button Grid.Column="0"
                         Content="Evaluate !bsr"
-                        Height="50" Margin="0"
                         Background="#404040"
                         Foreground="#FAFAFA"
-                        FontSize="24" Click="evaluateCode_OnClick">
-                </Button>
-                <TextBox x:Name="bsrBox" TextWrapping="NoWrap"
-                         Text="1e6ff" Width="120"
-                         Margin="5"
-                         HorizontalAlignment="Left"/>
+                        Margin="4,4,0,0"
+                        FontSize="24" Click="evaluateCode_OnClick"/>
+                    <TextBox x:Name="bsrBox" TextWrapping="NoWrap"
+                         Text="21703" Width="55"
+                         Margin="4,5,0,4" Grid.Column="1"
+                         HorizontalAlignment="Left"
+                         TextAlignment="Center"
+                         VerticalContentAlignment="Center"/>
 
+                    <Button Grid.Column="0" Grid.Row="1"
+                            Content="Evaluate Folder"
+                            Background="#404040"
+                            Foreground="#FAFAFA"
+                            Margin="4,4,0,4"
+                            FontSize="24" Click="evaluateFolder_OnClick"/>
+
+                    <Label x:Name="folderPerc" Grid.Column="1" Grid.Row="1"
+                           VerticalAlignment="Center"
+                           HorizontalAlignment="Center"
+                           Foreground="#FAFAFA"
+                           Content="" FontSize="10">
+                    </Label>
+                    
+                    <!--
+                    <Button Grid.Column="0" Grid.Row="2"
+                            Content="Evaluate .bplist"
+                            Background="#404040"
+                            Foreground="#FAFAFA"
+                            Margin="4,4,0,4"
+                            FontSize="24"/>
+                    -->
+                </Grid>
+                
             </StackPanel>
 
             <!-- Queue List -->

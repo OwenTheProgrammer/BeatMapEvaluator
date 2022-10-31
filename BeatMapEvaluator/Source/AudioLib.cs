@@ -15,7 +15,7 @@ namespace BeatMapEvaluator
             int errorCode = 0;
             float value = GetAudioTime(filePath, ref errorCode);
             if(errorCode != 0)
-                throw new ExternalException($"AudioLib ec: {errorCode}");
+                UserConsole.LogError($"Audio error: CODE-{errorCode}");
             return value;
         }
     }

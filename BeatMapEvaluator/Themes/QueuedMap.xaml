@@ -8,7 +8,9 @@
             <Setter.Value>
                 <ControlTemplate TargetType="ListViewItem">
                     <Border Background="{TemplateBinding Background}" 
-                        Height="60" Width="280" Margin="2">
+                        Height="60" Width="280" Margin="2"
+                        BorderThickness="4,0,0,0"
+                        BorderBrush="{Binding EvalColor}">
                     <Grid Margin="2">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="54"/>
