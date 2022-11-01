@@ -24,6 +24,8 @@ using System.IO.Compression;
 
 using WinForms = System.Windows.Forms;
 using System.Net.Mail;
+using System.Net.NetworkInformation;
+using System.Threading;
 
 namespace BeatMapEvaluator
 {
@@ -35,7 +37,6 @@ namespace BeatMapEvaluator
         private readonly char _ps = Path.DirectorySeparatorChar;
         private string appTemp;
 
-        private string appLogsFolder;
         private string logFile;
         private string logPath;
 
@@ -53,19 +54,19 @@ namespace BeatMapEvaluator
 
             string cd = Directory.GetCurrentDirectory();
             appTemp = Path.Combine(cd, "temp") + _ps;
-            appLogsFolder = Path.Combine(cd, "logs") + _ps;
+            logPath = Path.Combine(cd, "logs") + _ps;
             reportFolder = Path.Combine(cd, "reports") + _ps;
             UserConsole.onConsoleUpdate = new UserConsole.updateStringGUI(updateUserLog);
             UserConsole.onLogUpdate = new UserConsole.updateStringGUI(WriteToLogFile);
 
-            if(!Directory.Exists(appLogsFolder))
-                Directory.CreateDirectory(appLogsFolder);
+            if(!Directory.Exists(logPath))
+                Directory.CreateDirectory(logPath);
 
             if(!Directory.Exists(reportFolder))
                 Directory.CreateDirectory(reportFolder);
 
             logFile = "log_" + DateTime.Now.ToString("hh_mm_ss") + ".txt";
-            logPath = Path.Combine(appLogsFolder, logFile);
+            logPath = Path.Combine(logPath, logFile);
             
             if(Directory.Exists(appTemp))
                 FileInterface.DeleteDir_Full(appTemp);
@@ -82,15 +83,18 @@ namespace BeatMapEvaluator
             }
 
             json_MapInfo info = await FileInterface.ParseInfoFile(mapFolder, bsr);
-            if(info == null) {
+            if(info == null || info.standardBeatmap == null) {
                 UserConsole.LogError($"[{bsr}]: \"{mapFolder}Info.dat\" failed to load.");
                 return;
             }
 
-            int status = -1;
-            if(!evalStorage.ContainsKey(info.mapBSR) && info.mapDifficulties != MapDiffs.NONE) {
+            ReportStatus status = ReportStatus.None;
+            if(info.mapDifficulties != MapDiffs.NONE) {
                 json_beatMapDifficulty[] diffRegistry = info.standardBeatmap._diffMaps;
-                evalStorage.Add(info.mapBSR, (info, new MapStorageLayout[5]));
+                if(diffRegistry == null)
+                    return;
+                if(!evalStorage.ContainsKey(info.mapBSR))
+                    evalStorage.Add(info.mapBSR, (info, new MapStorageLayout[5]));
 
                 for(int i = 0; i < diffRegistry.Length; i++) {
                     MapStorageLayout layout = await FileInterface.InterpretMapFile(info, i);
@@ -108,35 +112,34 @@ namespace BeatMapEvaluator
                     int index = layout.mapDiff._difficultyRank / 2;
                     evalStorage[info.mapBSR].Item2[index] = layout;
 
-                    if(layout.reportStatus != 1) {
+                    if(layout.reportStatus != ReportStatus.Passed) {
                         string reportPath = Path.Combine(reportFolder, info.mapBSR + ".txt");
                         await UserConsole.ExportReport(layout, info, reportPath);
                     }
-
-                    if(status == -1) {
-                        if(layout.reportStatus == 2) status = 2;
-                        if(layout.reportStatus == 0) status = 0;
+                    if(status == ReportStatus.None) { 
+                        if(layout.reportStatus == ReportStatus.Error) 
+                            status = ReportStatus.Error;
+                        if(layout.reportStatus == ReportStatus.Failed)
+                            status = ReportStatus.Failed;
                     }
+                    layout.ClearDiff();
                 }
+
+                info.beatmapSets = null;
+                info.standardBeatmap = null;
+                evalStorage[info.mapBSR].Item1.beatmapSets = null;
+                evalStorage[info.mapBSR].Item1.standardBeatmap = null;
             }
-            if(status == -1) status = 1;
+            if(status == ReportStatus.None)
+                status = ReportStatus.Passed;
             UserConsole.Log($"[{bsr}]: Map loaded.");
-            MapQueue.Add(FileInterface.CreateMapListItem(info, status));
+            MapQueue.Add(await FileInterface.CreateMapListItem(info, status));
             Work_Numerator++;
             folderPerc.Content = Work_Numerator.ToString() + " / " + Work_Denominator.ToString();
         }
 
         //At the moment the user can press the button as many
         //times as they want... das bad
-
-        private string attemptParseBSR(string dir) { 
-            int cut = dir.LastIndexOf(_ps) + 1;
-            string name = dir.Substring(cut, dir.Length - cut);
-            int end = name.IndexOf(' ');
-            if(end != -1)
-                name = name.Substring(0, end);
-            return name;
-        }
 
         private async void evaluateCode_OnClick(object sender, RoutedEventArgs e) {
             string bsr = bsrBox.Text;
@@ -183,9 +186,11 @@ namespace BeatMapEvaluator
                     string input = dialog.SelectedPath;
                     int cut = input.LastIndexOf(_ps) + 1;
                     string name = input.Substring(cut, input.Length-cut);
-                    string bsr = attemptParseBSR(name);
+                    string bsr = Utils.ParseBSR(name);
                     await evaluateMap(folderPath, bsr);
-                } else { 
+                } else {
+
+
                     //Evaluate all zip files in folder
                     foreach(var file in files) {
                         if(file.EndsWith(".zip")) {
@@ -196,7 +201,7 @@ namespace BeatMapEvaluator
                     //Evaluate all folders inside selected folder
                     foreach(var dir in maps) {
                         string mapFolder = dir + _ps;
-                        string name = attemptParseBSR(dir);
+                        string name = Utils.ParseBSR(dir);
                         await evaluateMap(mapFolder, name);
                     }
                 }
@@ -217,7 +222,7 @@ namespace BeatMapEvaluator
         }
 
         private async Task ParseZipFile(string zipPath) {
-            string bsr = attemptParseBSR(zipPath);
+            string bsr = Utils.ParseBSR(zipPath);
             if(evalStorage.ContainsKey(bsr)) {
                 UserConsole.Log($"{bsr} already loaded.");
                 return;
@@ -247,7 +252,7 @@ namespace BeatMapEvaluator
                     }
                     string dropAsDir = drop + _ps;
                     if(Directory.Exists(dropAsDir)) {
-                        await evaluateMap(dropAsDir, attemptParseBSR(drop));
+                        await evaluateMap(dropAsDir, Utils.ParseBSR(drop));
                     }
                 }
             }
@@ -276,7 +281,7 @@ namespace BeatMapEvaluator
                 Brush[] colors = new Brush[5];
                 for(int i = 0; i < 5; i++) {
                     if(layout[i] == null) continue;
-                    string hex = DiffCriteriaReport.diffColors[layout[i].reportStatus];
+                    string hex = DiffCriteriaReport.diffColors[(int)layout[i].reportStatus];
                     colors[i] = (Brush)converter.ConvertFromString(hex);
                 }
                 //Dont even think about it..
@@ -304,30 +309,33 @@ namespace BeatMapEvaluator
             int sel = dValue / 2;
             DiffCriteriaReport report = layouts[sel].report;
 
-            string _nps = layouts[sel].nps.ToString("0.00");
+            string _nps = layouts[sel].notesPerSecond.ToString("0.00");
             string _jd = layouts[sel].jumpDistance.ToString("0.00");
             string _rt = layouts[sel].reactionTime.ToString("000.0");
             string _off = layouts[sel].noteOffset.ToString("0.00");
             string _njs = layouts[sel].njs.ToString("00.00");
 
-            string _modsReq = "Mods: ";
-            for(int i = 0; i < report.modsRequired.Count; i++) {
-                _modsReq += report.modsRequired[i];
-                if(i != report.modsRequired.Count-1)
-                    _modsReq += ", ";
-            }
-            if(report.modsRequired.Count == 0)
-                _modsReq += "None :)";
-
             int[] errorTable = report.errors;
-
+            int _modCount = errorTable[0];
             int _hotStartCount = errorTable[1];
             int _coldEndCount = errorTable[2];
             int _interCount = errorTable[3];
-            int _wallWidth = errorTable[4];
-            int _failSwings = errorTable[5];
-            int _oorNote = errorTable[6];
-            int _oorWall = errorTable[7];
+            int _failSwings = errorTable[4];
+            int _oorNote = errorTable[5];
+            int _oorWall = errorTable[6];
+
+            string _modsReq = "Mods: ";
+
+            if(_modCount <= 0) {
+                _modsReq += "None";
+            } else { 
+                for(int i = 0; i < _modCount; i++) {
+                    _modsReq += report.modsRequired[i];
+                    if(i != _modCount - 1)
+                        _modsReq += ", ";
+                }  
+            }
+
 
             spsChartGraph.spsData.Clear();
             spsChartGraph.spsData.AddRange(layouts[sel].report.swingsPerSecond);
@@ -347,15 +355,13 @@ namespace BeatMapEvaluator
             evc_HotStart.Text = $"Hot Starts: {_hotStartCount}";
             evc_ColdEnd.Text = $"Cold Ends: {_coldEndCount}";
             evc_Intersections.Text = $"Intersections: {_interCount}";
-            evc_WallWidth.Text = $"Wall Widths: {_wallWidth}";
             evc_FailSwings.Text = $"Fail Swings: {_failSwings}";
             evc_OOR.Text = $"Out-Of-Range: Notes:{_oorNote}, Walls:{_oorWall}";
 
-            evc_Mods.Foreground = EvalColor(report.modsRequired.Count == 0);
+            evc_Mods.Foreground = EvalColor(_modCount == 0);
             evc_HotStart.Foreground = EvalColor(_hotStartCount == 0);
             evc_ColdEnd.Foreground = EvalColor(_coldEndCount == 0);
             evc_Intersections.Foreground = EvalColor(_interCount == 0);
-            evc_WallWidth.Foreground = EvalColor(_wallWidth == 0);
             evc_FailSwings.Foreground = EvalColor(_failSwings == 0);
             evc_OOR.Foreground = EvalColor((_oorNote+_oorWall) == 0);
 

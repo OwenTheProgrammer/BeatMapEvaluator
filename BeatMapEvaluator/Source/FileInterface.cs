@@ -10,6 +10,7 @@ using Newtonsoft.Json; // :)
 using BeatMapEvaluator.Model;
 using System.Windows.Media.Imaging;
 using System.Windows.Media;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement.TaskbarClock;
 
 namespace BeatMapEvaluator
 {
@@ -55,16 +56,20 @@ namespace BeatMapEvaluator
         }
         public static async Task<json_MapInfo?> ParseInfoFile(string mapDirectory, string bsr) {
             string infoFilePath = Path.Combine(mapDirectory, "Info.dat");
-            if(!File.Exists(infoFilePath)) {
-                UserConsole.LogError($"[{bsr}] Error: Failed to find Info.dat file.");
-                return null;
+            if (!File.Exists(infoFilePath)) {
+                infoFilePath = Path.Combine(mapDirectory, "info.dat");
+                if(!File.Exists(infoFilePath)) { 
+                    UserConsole.LogError($"[{bsr}] Error: Failed to find Info.dat file.");
+                    return null;
+                }
             }
 
             UserConsole.Log($"[{bsr}]: Reading \'Info.dat\' ..");
             string infoFileData = File.ReadAllText(infoFilePath);
 
-            var loadTask = Task.Run(() => JsonConvert.DeserializeObject<json_MapInfo>(infoFileData));
-            json_MapInfo infoFile = await loadTask;
+            json_MapInfo infoFile = JsonConvert.DeserializeObject<json_MapInfo>(infoFileData);
+            //var loadTask = Task.Run(() => JsonConvert.DeserializeObject<json_MapInfo>(infoFileData));
+            //json_MapInfo infoFile = await loadTask;
             infoFile.mapBSR = bsr;
             infoFile.songFilePath = Path.Combine(mapDirectory, infoFile._songFilename);
             infoFile.mapContextDir = mapDirectory;
@@ -96,28 +101,29 @@ namespace BeatMapEvaluator
                 return null;
             }
 
+            //json_DiffFileV2? diff = JsonConvert.DeserializeObject<json_DiffFileV2>(fileData);
             var rawRead = Task.Run(()=>JsonConvert.DeserializeObject<json_DiffFileV2>(fileData));
             json_DiffFileV2? diff = await rawRead;
 
 
             // In case it still fills null for some reason
-            if(diff == null || diff._notes == null || diff._obstacles == null) {
+            if (diff == null || diff._notes == null) {
                 UserConsole.LogError($"[{info.mapBSR}]: Failed to parse file JSON.");
                 return null;
             }
-            if(diff._version.StartsWith("3.")) {
+            if(diff._version == null || diff._version.StartsWith("3.")) {
                 UserConsole.LogError($"[{info.mapBSR}]: Version 3 not supported.");
                 return null;
             }
             diff.noteCount = diff._notes.Length;
-            diff.obstacleCount = diff._obstacles.Length;
+            diff.obstacleCount = diff._walls.Length;
 
             UserConsole.Log($"[{info.mapBSR}]: Loading map data to table..");
             MapStorageLayout MapData = new MapStorageLayout(info, diff, diffIndex);
             return MapData;
         }
 
-        public static MapQueueModel CreateMapListItem(json_MapInfo info, int color) {
+        public static async Task<MapQueueModel> CreateMapListItem(json_MapInfo info, ReportStatus sts) {
             MapQueueModel DisplayItem = new MapQueueModel();
             string ImagePath = "";
 
@@ -127,10 +133,7 @@ namespace BeatMapEvaluator
                 ImagePath = Path.Combine(info.mapContextDir, info._coverImageFilename);
                 try {
                     //Build the image file
-                    DisplayItem.MapProfile.BeginInit();
-                    DisplayItem.MapProfile.CacheOption = BitmapCacheOption.OnLoad;
-                    DisplayItem.MapProfile.UriSource = new Uri(ImagePath);
-                    DisplayItem.MapProfile.EndInit();
+                    DisplayItem.MapProfile = await BuildImage(ImagePath);
                 } catch {
                     UserConsole.LogError($"Failed to load: \"{info._coverImageFilename}\"");
                     DisplayItem.MapProfile = new BitmapImage();
@@ -140,7 +143,7 @@ namespace BeatMapEvaluator
             }
 
             var conv = new BrushConverter();
-            string diffHex = DiffCriteriaReport.diffColors[color];
+            string diffHex = DiffCriteriaReport.diffColors[(int)sts];
 
             DisplayItem.MapSongName = info._songName ?? "<NO SONG>";
             DisplayItem.MapSongSubName = info._songSubName ?? "";
@@ -148,6 +151,15 @@ namespace BeatMapEvaluator
             DisplayItem.EvalColor = (Brush)conv.ConvertFromString(diffHex);
             return DisplayItem;
         }
+        private static async Task<BitmapImage> BuildImage(string path) {
+            BitmapImage img = new BitmapImage();
+            img.BeginInit();
+            img.CacheOption = BitmapCacheOption.OnLoad;
+            img.UriSource = new Uri(path);
+            img.EndInit();
+            return img;
+        }
+
 
         //Delete directory / recursive
         public static void DeleteDir_Full(string dirPath) {

@@ -30,18 +30,23 @@ namespace BeatMapEvaluator
         public static async Task ExportReport(MapStorageLayout layout, json_MapInfo info, string filePath) {
 
             DiffCriteriaReport r = layout.report;
-            string _title = "- " + layout.bsr + ": " + info._songName + " -\n";
-            string _diff = "Difficulty: " + layout.mapDiff._difficulty + "\n\n";
 
-            await File.WriteAllTextAsync(filePath, _title);
-            await File.AppendAllTextAsync(filePath, _diff);
-            if(r.modsRequired != null) {
+            List<string> buffer = new List<string>();
+            string _title = "- " + layout.bsr + ": " + info._songName + " -";
+            string _diff = "Difficulty: " + layout.mapDiff._difficulty;
+
+            buffer.Add(_title);
+            buffer.Add(_diff);
+            //await File.WriteAllTextAsync(filePath, _title);
+            //await File.AppendAllTextAsync(filePath, _diff);
+            if (r.modsRequired != null) {
                 string _buffer = "Mods: [" + r.modsRequired.Count + "]\n";
                 for(int i = 0; i < r.modsRequired.Count; i++) {
                     _buffer += (i==r.modsRequired.Count-1) ? endPipe : cPipe;
                     _buffer += r.modsRequired[i] + "\n";
                 }
-                await File.AppendAllTextAsync(filePath, _buffer);
+                buffer.Add(_buffer);
+                //await File.AppendAllTextAsync(filePath, _buffer);
             }
             if(r.note_HotStarts != null || r.wall_HotStarts != null) {
                 int count = 0;
@@ -58,7 +63,8 @@ namespace BeatMapEvaluator
                 }
                 if(count != 0) { 
                     string _b = "HotStarts: [" + count + "]\n" + _buffer;
-                    await File.AppendAllTextAsync(filePath, _b);
+                    buffer.Add(_b);
+                    //await File.AppendAllTextAsync(filePath, _b);
                 }
             }
             if(r.note_ColdEnds != null || r.wall_ColdEnds != null) {
@@ -76,7 +82,8 @@ namespace BeatMapEvaluator
                 }
                 if(count != 0) { 
                     string _b = "ColdEnds: [" + count + "]\n" + _buffer;
-                    await File.AppendAllTextAsync(filePath, _b);
+                    buffer.Add(_b);
+                    //await File.AppendAllTextAsync(filePath, _b);
                 }
             }
             if(r.note_Intersections != null || r.wall_Intersections != null) { 
@@ -94,20 +101,8 @@ namespace BeatMapEvaluator
                 }
                 if(count != 0) { 
                     string _b = "Intersections: [" + count + "]\n" + _buffer;
-                    await File.AppendAllTextAsync(filePath, _b);
-                }
-            }
-            if(r.wall_Lengths != null) {
-                int count = r.wall_Lengths.Count;
-                string _buffer = "Wall Lengths: [" + count + "]\n";
-                for (int i = 0; i < r.wall_Lengths.Count; i++) { 
-                    _buffer += _writeStandardWall(r.wall_Lengths, i);
-                    if(r.wall_Lengths[i]._duration < 0) _buffer += "neg-time\n";
-                    else if(r.wall_Lengths[i]._width < 0) _buffer += "neg-width\n";
-                    else _buffer += "zero width\n";
-                }
-                if(count != 0) { 
-                    await File.AppendAllTextAsync(filePath, _buffer);
+                    buffer.Add(_b);
+                    //await File.AppendAllTextAsync(filePath, _b);
                 }
             }
             if(r.note_failSwings != null) {
@@ -116,8 +111,9 @@ namespace BeatMapEvaluator
                 for (int i = 0; i < r.note_failSwings.Count; i++) { 
                     _buffer += _writeStandardNote(r.note_failSwings, i);
                 }
-                if(count != 0) { 
-                    await File.AppendAllTextAsync(filePath, _buffer);
+                if(count != 0) {
+                    buffer.Add(_buffer);
+                    //await File.AppendAllTextAsync(filePath, _buffer);
                 }
             }
             if(r.note_OutOfRange != null || r.wall_OutOfRange != null) {
@@ -135,11 +131,12 @@ namespace BeatMapEvaluator
                     }
                 }
                 if(count != 0) {
-                    string _b = "Out of Bounds: [" + count + "]\n" + _buffer;
-                    await File.AppendAllTextAsync(filePath, _b);
+                    string _b = "Outside Range: [" + count + "]\n" + _buffer;
+                    buffer.Add(_b);
+                    //await File.AppendAllTextAsync(filePath, _b);
                 }
             }
-
+            await File.WriteAllLinesAsync(filePath, buffer);
         }
 
         private static string _writeStandardNote(List<json_MapNote> list, int index) {
@@ -163,7 +160,7 @@ namespace BeatMapEvaluator
             ConsoleHandle(message);
         }
 
-        private static Task ConsoleHandle(string message) { 
+        private static Task ConsoleHandle(string message) {
             //Shift all logs in buffer up and add incoming
             for(int i = 0; i < consoleBuffer.Length-1; i++)
                 consoleBuffer[i] = consoleBuffer[i+1];
@@ -173,7 +170,6 @@ namespace BeatMapEvaluator
             string logBuffer = "Console log:\n";
             foreach(string line in consoleBuffer)
                 logBuffer += line + '\n';
-            
             //Call GUI update
             if(onConsoleUpdate != null)
                 onConsoleUpdate.Invoke(logBuffer);
@@ -183,7 +179,9 @@ namespace BeatMapEvaluator
             //Log to file with time stamp
             string timeStamp = DateTime.Now.ToString(logStampFormat);
             string logOut = $"[{timeStamp}|{hndl}]: {message}";
+#if !RELEASE
             System.Diagnostics.Debug.WriteLine(logOut);
+#endif
             //Call LogFile write
             if(onLogUpdate != null)
                 onLogUpdate.Invoke(logOut);

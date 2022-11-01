@@ -45,8 +45,6 @@
 
             <Button x:Name="diffButton_ExpertPlus" Style="{StaticResource DiffButton}" Tag="9"
                     Background="#FFAE17DD" Content="Expert+" Click="diffButton_OnClick"/>
-
-
         </StackPanel>
 
         <!-- Main Panel -->
@@ -95,7 +93,6 @@
                         <TextBlock x:Name="evc_HotStart" Text="Hot Starts:" Foreground="White" Padding="2"/>
                         <TextBlock x:Name="evc_ColdEnd" Text="Cold Ends:" Foreground="White" Padding="2"/>
                         <TextBlock x:Name="evc_Intersections" Text="Intersections:" Foreground="White" Padding="2"/>
-                        <TextBlock x:Name="evc_WallWidth" Text="Wall Widths:" Foreground="White" Padding="2"/>
                         <TextBlock x:Name="evc_FailSwings" Text="Fail Swings:" Foreground="White" Padding="2"/>
                         <TextBlock x:Name="evc_OOR" Text="Out-Of-Range:" Foreground="White" Padding="2"/>
                     </StackPanel>
@@ -164,22 +161,13 @@
                             Foreground="#FAFAFA"
                             Margin="4,4,0,4"
                             FontSize="24" Click="evaluateZip_OnClick"/>
-                    
+
                     <Label x:Name="folderPerc" Grid.Column="1" Grid.Row="1"
                            VerticalAlignment="Center"
                            HorizontalAlignment="Center"
                            Foreground="#FAFAFA"
                            Content="" FontSize="10">
                     </Label>
-                    
-                    <!--
-                    <Button Grid.Column="0" Grid.Row="2"
-                            Content="Evaluate .bplist"
-                            Background="#404040"
-                            Foreground="#FAFAFA"
-                            Margin="4,4,0,4"
-                            FontSize="24"/>
-                    -->
                 </Grid>
                 
             </StackPanel>

@@ -7,11 +7,14 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 using WMPLib;
+using System.IO;
 
 namespace BeatMapEvaluator
 {
+    public enum ReportStatus {Error=0, Failed=1, Passed=2, None};
     internal class Utils {
 
+        private readonly static char _ps = Path.DirectorySeparatorChar;
         //Some math wizard shit no one explained
         public static float CalculateJD(float bpm, float njs, float offset) {
             if(njs <= 0.01f) njs = 10.0f;
@@ -57,14 +60,22 @@ namespace BeatMapEvaluator
             }
             return diffs;
         }
+        public static string ParseBSR(string mapPath) { 
+            int cut = mapPath.LastIndexOf(_ps) + 1;
+            string name = mapPath.Substring(cut, mapPath.Length-cut);
+            int end = name.IndexOf(' ');
+            if(end != -1)
+                name = name.Substring(0, end);
+            return name;
+        }
 
         public static json_MapNote? GetAdjacentNote(List<json_MapNote> list, json_MapNote note, NoteCutDirection lookDir) {
             int cell = note.cellIndex;
 
-            bool u = note._lineLayer != 2;  //Not the top most layer
-            bool d = note._lineLayer != 0;  //Not the bottom most layer
-            bool l = note._lineIndex != 0;  //Not the left most column
-            bool r = note._lineIndex != 3;  //Not the right most column
+            bool u = note.yPos != 2;  //Not the top most layer
+            bool d = note.yPos != 0;  //Not the bottom most layer
+            bool l = note.xPos != 0;  //Not the left most column
+            bool r = note.xPos != 3;  //Not the right most column
 
             switch(lookDir) {
                 case NoteCutDirection.Up:   if(u) cell += 4; break;

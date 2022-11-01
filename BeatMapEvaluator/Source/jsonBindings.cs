@@ -82,22 +82,26 @@ namespace BeatMapEvaluator
     public class json_DiffFileV2 {
         public string? _version { get; set; }
         public json_MapNote[]? _notes { get; set; }
-        public json_MapObstacle[]? _obstacles { get; set; }
+        [JsonProperty("_obstacles")]
+        public json_MapObstacle[]? _walls { get; set; }
 
         public int noteCount;
         public int obstacleCount;
     }
 
     //Based off: https://bsmg.wiki/mapping/map-format.html#notes-1
-    public class json_MapNote { 
+    public class json_MapNote {
         public float _time { get; set; }
-        public int _lineIndex { get; set; }
-        public int _lineLayer { get; set; }
+        [JsonProperty("_lineIndex")]
+        public int xPos { get; set; }
+        [JsonProperty("_lineLayer")]
+        public int yPos { get; set; }
         public NoteType _type { get; set; }
-        public NoteCutDirection _cutDirection { get; set; }
+        [JsonProperty("_cutDirection")]
+        public NoteCutDirection _dir { get; set; }
 
-        public int cellIndex;
-        public float actualTime;
+        public int cellIndex;   //Index to the grid
+        public float realTime;  //Time in seconds
     }
 
     public enum ObstacleType {
@@ -106,14 +110,15 @@ namespace BeatMapEvaluator
     //Based off: https://bsmg.wiki/mapping/map-format.html#obstacles-3
     public class json_MapObstacle {
         public float _time { get; set; }
-        public int _lineIndex { get; set; }
+        [JsonProperty("_lineIndex")]
+        public int xPos { get; set; }
         public ObstacleType _type { get; set; }
         public float _duration { get; set; }
         public int _width { get; set; }
         
         public bool isInteractive;
-        public bool isShortWall;
-        public float actualTime;    //The time in seconds
+        public bool isShort;        //Less than 13.8ms
+        public float realTime;      //The time in seconds
         public float endTime;       //The end point of a wall in beats
     }
 
