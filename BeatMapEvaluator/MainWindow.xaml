@@ -157,7 +157,14 @@
                             Foreground="#FAFAFA"
                             Margin="4,4,0,4"
                             FontSize="24" Click="evaluateFolder_OnClick"/>
-
+                    
+                    <Button Grid.Column="0" Grid.Row="2"
+                            Content="Evaluate .zip"
+                            Background="#404040"
+                            Foreground="#FAFAFA"
+                            Margin="4,4,0,4"
+                            FontSize="24" Click="evaluateZip_OnClick"/>
+                    
                     <Label x:Name="folderPerc" Grid.Column="1" Grid.Row="1"
                            VerticalAlignment="Center"
                            HorizontalAlignment="Center"
@@ -185,7 +192,10 @@
                       HorizontalContentAlignment="Center"
                       ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                       ItemsSource="{Binding MapQueue}"
-                      ItemContainerStyle="{StaticResource QueuedMap}" SelectionChanged="QueueList_SelectionChanged">
+                      ItemContainerStyle="{StaticResource QueuedMap}"
+                      SelectionChanged="QueueList_SelectionChanged"
+                      AllowDrop="True"
+                      Drop="QueueDrop_FileInput">
             </ListView>
         </Grid>
 

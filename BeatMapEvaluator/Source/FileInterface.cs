@@ -53,11 +53,11 @@ namespace BeatMapEvaluator
             }
             await UnzipMap(bsr, targetDir);
         }
-        public static async Task<json_MapInfo> ParseInfoFile(string mapDirectory, string bsr) {
+        public static async Task<json_MapInfo?> ParseInfoFile(string mapDirectory, string bsr) {
             string infoFilePath = Path.Combine(mapDirectory, "Info.dat");
             if(!File.Exists(infoFilePath)) {
                 UserConsole.LogError($"[{bsr}] Error: Failed to find Info.dat file.");
-                throw new FileNotFoundException();
+                return null;
             }
 
             UserConsole.Log($"[{bsr}]: Reading \'Info.dat\' ..");
@@ -98,11 +98,17 @@ namespace BeatMapEvaluator
 
             var rawRead = Task.Run(()=>JsonConvert.DeserializeObject<json_DiffFileV2>(fileData));
             json_DiffFileV2? diff = await rawRead;
+
+
             // In case it still fills null for some reason
-            if(diff == null || 
-               diff._notes == null || 
-               diff._obstacles == null)
+            if(diff == null || diff._notes == null || diff._obstacles == null) {
+                UserConsole.LogError($"[{info.mapBSR}]: Failed to parse file JSON.");
                 return null;
+            }
+            if(diff._version.StartsWith("3.")) {
+                UserConsole.LogError($"[{info.mapBSR}]: Version 3 not supported.");
+                return null;
+            }
             diff.noteCount = diff._notes.Length;
             diff.obstacleCount = diff._obstacles.Length;
 
