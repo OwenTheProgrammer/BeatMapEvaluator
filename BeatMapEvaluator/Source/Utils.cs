@@ -1,21 +1,31 @@
 ﻿using System;
-using System.CodeDom;
-using System.Collections.Generic;
-using System.Collections.Specialized;
-using System.Linq;
-using System.Runtime.InteropServices;
-using System.Text;
-using System.Threading.Tasks;
-using WMPLib;
 using System.IO;
+using System.Linq;
+using System.Collections.Generic;
 
 namespace BeatMapEvaluator
 {
+    /// <summary>
+    /// <remarks>
+    /// <para name="Error">Error:
+    /// <c>Something went wrong, dont fully trust this evaluation</c>
+    /// </para>
+    /// <para name="Failed">Failed: 
+    /// <c>Map doesnt meet criteria somewhere, (logged to the reports folder)</c>
+    /// </para>
+    /// <para name="Passed">Passed: 
+    /// <c>Map meets all criteria.. hopefully :)</c>
+    /// </para>
+    /// <para name="None">None: 
+    /// <c>Init state but not zero because im stupid or something (I think its index casting)</c>
+    /// </para>
+    /// </remarks>
+    /// </summary>
     public enum ReportStatus {Error=0, Failed=1, Passed=2, None};
+
+    /// <summary>Boiler plate functions class... Utils!</summary>
     internal class Utils {
-        /// <summary>
-        /// Systems defined path separator "/" "\" etc.
-        /// </summary>
+        /// <summary>Systems defined path separator "/" "\" etc.</summary>
         private readonly static char _ps = Path.DirectorySeparatorChar;
 
         /// <summary>
@@ -175,6 +185,32 @@ namespace BeatMapEvaluator
             }
             //return null if nothing found
             return null;
+        }
+
+        /// <summary>
+        /// Gets the high percentile of a swing list.
+        /// </summary>
+        /// <remarks>
+        /// <para name="percent">percent 1.0-0.0 = 100%-0%</para>
+        /// </remarks>
+        /// <param name="swings">All swings per second</param>
+        /// <param name="percent">Percentile inclusivity</param>
+        /// <returns>the swings per second</returns>
+        public static int GetSwingPercentile(int[] swings, float percent) {
+            //Copy because array uses pointer
+            int[] sorted = new int[swings.Length];
+            Array.Copy(swings, sorted, sorted.Length);
+            //Sort in descending order (High to low)
+            Array.Sort(sorted);
+            Array.Reverse(sorted);
+
+            //Calculate the included sample amount and segregate
+            int subdivCount = (int)Math.Round(sorted.Length * percent);
+            if (subdivCount == 0) subdivCount = 1; 
+            int[] div = new int[subdivCount];
+            Array.Copy(sorted, div, subdivCount);
+            //Return the average of the subset
+            return (int)div.Average();
         }
     }
 }

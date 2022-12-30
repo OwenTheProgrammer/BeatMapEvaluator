@@ -95,6 +95,7 @@
                         <TextBlock x:Name="evc_Intersections" Text="Intersections:" Foreground="White" Padding="2"/>
                         <TextBlock x:Name="evc_FailSwings" Text="Fail Swings:" Foreground="White" Padding="2"/>
                         <TextBlock x:Name="evc_OOR" Text="Out-Of-Range:" Foreground="White" Padding="2"/>
+                        <TextBlock x:Name="evc_Percents" Text="Swing Highs:" Foreground="White" Padding="2"/>
                     </StackPanel>
                     <custom:SwingPerSecondGraph x:Name="spsChartGraph" Grid.Row="2" Grid.Column="2"/>
                 </Grid>
@@ -154,7 +155,7 @@
                             Foreground="#FAFAFA"
                             Margin="4,4,0,4"
                             FontSize="24" Click="evaluateFolder_OnClick"/>
-                    
+
                     <Button Grid.Column="0" Grid.Row="2"
                             Content="Evaluate .zip"
                             Background="#404040"
@@ -169,7 +170,7 @@
                            Content="" FontSize="10">
                     </Label>
                 </Grid>
-                
+
             </StackPanel>
 
             <!-- Queue List -->

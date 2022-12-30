@@ -1,15 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Windows.Media;
+﻿using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
 namespace BeatMapEvaluator.Model
 {
-    /// <summary>
-    /// A "map queue" element model
-    /// </summary>
+    /// <summary>A "map queue" element model AKA QueuedMap.xaml</summary>
     public class MapQueueModel {
         //All difficulties available
         public MapDiffs diffsAvailable { get; set; }
