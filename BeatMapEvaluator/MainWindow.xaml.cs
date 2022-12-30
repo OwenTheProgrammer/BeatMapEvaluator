@@ -42,7 +42,7 @@ namespace BeatMapEvaluator
 
         private string reportFolder;
 
-        private int Work_Numerator; //Folder progress numerator
+        private int Work_Numerator;     //Folder progress numerator
         private int Work_Denominator;   //Folder progress denominator
 
         public MainWindow() {
@@ -189,8 +189,6 @@ namespace BeatMapEvaluator
                     string bsr = Utils.ParseBSR(name);
                     await evaluateMap(folderPath, bsr);
                 } else {
-
-
                     //Evaluate all zip files in folder
                     foreach(var file in files) {
                         if(file.EndsWith(".zip")) {
@@ -337,9 +335,14 @@ namespace BeatMapEvaluator
             }
 
 
-            spsChartGraph.spsData.Clear();
-            spsChartGraph.spsData.AddRange(layouts[sel].report.swingsPerSecond);
+            spsChartGraph.LeftHandSwings.Clear();
+            spsChartGraph.RightHandSwings.Clear();
+            spsChartGraph.LeftHandSwings.AddRange(report.LeftHandSwings);
+            spsChartGraph.RightHandSwings.AddRange(report.RightHandSwings);
             spsChartGraph.DataContext = spsChartGraph;
+            //spsChartGraph.spsData.Clear();
+            //spsChartGraph.spsData.AddRange(layouts[sel].report.swingsPerSecond);
+            //spsChartGraph.DataContext = spsChartGraph;
 
             evc_Profile.Source = MapQueue[QueueList.SelectedIndex].MapProfile;
             evc_SongName.Content = mapInfo._songName;

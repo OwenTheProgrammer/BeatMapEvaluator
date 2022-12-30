@@ -11,34 +11,51 @@ using System.Windows.Media.Animation;
 namespace BeatMapEvaluator
 {
     internal class UserConsole {
+        //Decoration pipes :)
         const string cPipe = "├─ ";
         const string endPipe = "└─ ";
 
         private readonly static string logStampFormat = @"hh:mm:ss";
-        private static string[] consoleBuffer = new string[7];
+        private static string[] consoleBuffer = new string[7]; //User console buffer
 
         public delegate void updateStringGUI(string ctx);
 
+        //User console callback
         public static updateStringGUI? onConsoleUpdate = null;
+        //Log file update callback
         public static updateStringGUI? onLogUpdate = null;
 
+        /// <summary>
+        /// Logs to the log file and the user console.
+        /// </summary>
+        /// <param name="message">The message to log</param>
         public static void Log(string message) {
-            LogHandle(message, "LOG");
-            ConsoleHandle(message);
+            LogHandle(message, "LOG");  //Log to file
+            ConsoleHandle(message);     //Log to user console
         }
 
+        /// <summary>
+        /// Writes a report file for a given map
+        /// </summary>
+        /// <param name="layout">The maps evaluation info</param>
+        /// <param name="info">The maps json info</param>
+        /// <param name="filePath">the output filepath</param>
         public static async Task ExportReport(MapStorageLayout layout, json_MapInfo info, string filePath) {
-
+            //report cached as just "r"
             DiffCriteriaReport r = layout.report;
 
+            //The report file lines buffer
             List<string> buffer = new List<string>();
+            //Header formatting
             string _title = "- " + layout.bsr + ": " + info._songName + " -";
             string _diff = "Difficulty: " + layout.mapDiff._difficulty;
-
             buffer.Add(_title);
             buffer.Add(_diff);
+
             //await File.WriteAllTextAsync(filePath, _title);
             //await File.AppendAllTextAsync(filePath, _diff);
+            
+            //If mods required, write as rule-exception
             if (r.modsRequired != null) {
                 string _buffer = "Mods: [" + r.modsRequired.Count + "]\n";
                 for(int i = 0; i < r.modsRequired.Count; i++) {
@@ -48,6 +65,8 @@ namespace BeatMapEvaluator
                 buffer.Add(_buffer);
                 //await File.AppendAllTextAsync(filePath, _buffer);
             }
+
+            //Write note/wall hot start violations
             if(r.note_HotStarts != null || r.wall_HotStarts != null) {
                 int count = 0;
                 string _buffer = "";
@@ -67,6 +86,7 @@ namespace BeatMapEvaluator
                     //await File.AppendAllTextAsync(filePath, _b);
                 }
             }
+            //Write note/wall cold end violations
             if(r.note_ColdEnds != null || r.wall_ColdEnds != null) {
                 int count = 0;
                 string _buffer = "";
@@ -86,6 +106,7 @@ namespace BeatMapEvaluator
                     //await File.AppendAllTextAsync(filePath, _b);
                 }
             }
+            //Write note/wall.. you get it.
             if(r.note_Intersections != null || r.wall_Intersections != null) { 
                 int count = 0;
                 string _buffer = "";
@@ -139,7 +160,14 @@ namespace BeatMapEvaluator
             await File.WriteAllLinesAsync(filePath, buffer);
         }
 
+        /// <summary>
+        /// Formats a note rule-exception in the logging format.
+        /// </summary>
+        /// <param name="list">A list of rule breaking notes</param>
+        /// <param name="index">The given index to write for</param>
+        /// <returns>"[Beat {time}]: left/right hand or bomb"</returns>
         private static string _writeStandardNote(List<json_MapNote> list, int index) {
+            //Pipe decoration
             string _buffer = (index == list.Count-1) ? endPipe : cPipe;
             _buffer += "[Beat " + list[index]._time + "]: ";
             switch(list[index]._type) {
@@ -149,17 +177,33 @@ namespace BeatMapEvaluator
             }
             return _buffer;
         }
+
+        /// <summary>
+        /// Formats a wall rule-exception in the logging format.
+        /// </summary>
+        /// <param name="list">A list of rule breaking walls</param>
+        /// <param name="index">The given index to write for</param>
+        /// <returns>"[Beat {time}]: wall"</returns>
         private static string _writeStandardWall(List<json_MapObstacle> list, int index) {
+            //Pipe decoration
             string _buffer = (index == list.Count-1) ? endPipe : cPipe;
             _buffer += "[Beat " + list[index]._time + "]: wall";
             return _buffer;
         }
 
+        /// <summary>
+        /// Error log, hopefully this dont happen too often.
+        /// </summary>
+        /// <param name="message">The error message</param>
         public static void LogError(string message) {
-            LogHandle(message, "ERROR");
-            ConsoleHandle(message);
+            LogHandle(message, "ERROR");    //Log to file
+            ConsoleHandle(message);         //Log to user console
         }
 
+        /// <summary>
+        /// Logs a message to the users UI console.
+        /// </summary>
+        /// <param name="message">The message to be logged</param>
         private static Task ConsoleHandle(string message) {
             //Shift all logs in buffer up and add incoming
             for(int i = 0; i < consoleBuffer.Length-1; i++)
@@ -175,13 +219,20 @@ namespace BeatMapEvaluator
                 onConsoleUpdate.Invoke(logBuffer);
             return Task.CompletedTask;
         }
+
+        /// <summary>
+        /// Logs to the log file.
+        /// </summary>
+        /// <param name="message">The log message</param>
+        /// <param name="hndl">the class thats logging's name</param>
         private static Task LogHandle(string message, string hndl) { 
             //Log to file with time stamp
             string timeStamp = DateTime.Now.ToString(logStampFormat);
             string logOut = $"[{timeStamp}|{hndl}]: {message}";
-#if !RELEASE
+            //Debug to the visual studio debug log
+            #if !RELEASE
             System.Diagnostics.Debug.WriteLine(logOut);
-#endif
+            #endif
             //Call LogFile write
             if(onLogUpdate != null)
                 onLogUpdate.Invoke(logOut);

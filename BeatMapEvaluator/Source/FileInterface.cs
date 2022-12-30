@@ -6,11 +6,10 @@ using System.Threading.Tasks;
 using System.Net.Http;
 using System.IO;
 using System.IO.Compression;
-using Newtonsoft.Json; // :)
+using Newtonsoft.Json; //https://tenor.com/bD1IM.gif
 using BeatMapEvaluator.Model;
 using System.Windows.Media.Imaging;
 using System.Windows.Media;
-using static System.Windows.Forms.VisualStyles.VisualStyleElement.TaskbarClock;
 
 namespace BeatMapEvaluator
 {

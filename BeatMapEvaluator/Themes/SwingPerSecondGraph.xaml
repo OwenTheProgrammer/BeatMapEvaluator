@@ -20,10 +20,14 @@
             </StackPanel>
         <lvc:CartesianChart Name="spsChart" Grid.Row="1" Margin="15">
             <lvc:CartesianChart.Series>
-                <lvc:LineSeries Values="{Binding spsData}" LineSmoothness="0.3" StrokeThickness="3" 
+                <lvc:LineSeries Values="{Binding LeftHandSwings}" LineSmoothness="0.3" StrokeThickness="3" 
                                 DataLabels="False" FontSize="16" Foreground="#6B303030"
-                                Stroke="#F2F2F2" Fill="Transparent" PointGeometrySize="0"/>
+                                Stroke="#AAFF1155" Fill="Transparent" PointGeometrySize="0"/>
+                <lvc:LineSeries Values="{Binding RightHandSwings}" LineSmoothness="0.3" StrokeThickness="3" 
+                                DataLabels="False" FontSize="16" Foreground="#6B303030"
+                                Stroke="#AA33BBFF" Fill="Transparent" PointGeometrySize="0"/>
             </lvc:CartesianChart.Series>
+
             <lvc:CartesianChart.AxisX>
                 <lvc:Axis IsEnabled="True" ShowLabels="True"/>
             </lvc:CartesianChart.AxisX>

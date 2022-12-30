@@ -20,7 +20,7 @@ using System.Windows.Xps.Serialization;
 namespace BeatMapEvaluator
 {
     public struct DiffCriteriaReport {
-        public int[]? swingsPerSecond;
+        public int[]? LeftHandSwings, RightHandSwings;
         //R1:d
         public List<string> modsRequired;
         //R1:f
@@ -41,6 +41,7 @@ namespace BeatMapEvaluator
         //error, failed, passed
         public static readonly string[] diffColors = {"#713E93","#BE1F46","#9CED9C"};
 
+        //Error counts
         public int[] errors;
         public ReportStatus GetReportStatus() {
             errors = new int[7];
@@ -89,7 +90,7 @@ namespace BeatMapEvaluator
 
         public Dictionary<float, List<json_MapNote>?>? noteCache;
         public Dictionary<float, List<json_MapObstacle>?>? wallCache;
-        public int[]? SwingSegments;
+        public int[]? LeftHandSwings, RightHandSwings;
 
         public ReportStatus reportStatus;
         public string? bsr;
@@ -139,7 +140,8 @@ namespace BeatMapEvaluator
                 Eval_OutOfRangeWalls()
             };
             await Task.WhenAll(Cullers);
-            report.swingsPerSecond = SwingSegments;
+            report.LeftHandSwings = LeftHandSwings;
+            report.RightHandSwings = RightHandSwings;
             report.note_OutOfRange = ((Task<List<json_MapNote>>)Cullers[0]).Result;
             report.wall_OutOfRange = ((Task<List<json_MapObstacle>>)Cullers[1]).Result;
 
@@ -178,14 +180,18 @@ namespace BeatMapEvaluator
             wallCache = null;
             diffFile._notes = null;
             diffFile._walls = null;
-            SwingSegments = null;
+            LeftHandSwings = null;
+            RightHandSwings = null;
             mapDiff = null;
-            GC.Collect();
+            GC.Collect(); //LMAO I FUCKING HATE C# WHYY
         }
 
         public Task Load_NotesToCache(json_DiffFileV2 diff) {
             int cellCount = (int)Math.Ceiling(audioLength);
-            SwingSegments = new int[cellCount];
+            
+            //lefty gang btw
+            LeftHandSwings = new int[cellCount];
+            RightHandSwings = new int[cellCount];
 
             int noteCount = 0;
             foreach(var note in diff._notes) {
@@ -193,7 +199,13 @@ namespace BeatMapEvaluator
                 note.realTime = note._time * beatsPerSecond;
                 if(note._type != NoteType.Bomb) {
                     int index = (int)Math.Floor(note.realTime);
-                    SwingSegments[index]++;
+
+                    if(note._type == NoteType.Left) {
+                        LeftHandSwings[index]++;
+                    } else {
+                        RightHandSwings[index]++;
+                    }
+
                     noteCount++;
                 }
 
