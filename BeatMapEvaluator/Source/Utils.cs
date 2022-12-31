@@ -94,8 +94,8 @@ namespace BeatMapEvaluator
         /// <param name="b">the second number</param>
         /// <param name="epsilon">the max difference</param>
         /// <returns>
-        /// <c>True</c> if numeric difference from <paramref name="a"/> to <paramref name="b"/> is within <paramref name="epsilon"/>, 
-        /// <c>False</c> otherwise.
+        /// <c><see cref="bool">True</see></c> if numeric difference from <paramref name="a"/> to <paramref name="b"/> is within <paramref name="epsilon"/>, 
+        /// <c><see cref="bool">False</see></c> otherwise.
         /// </returns>
         public static bool Approx(float a, float b, float epsilon) {
             return Math.Abs(a - b) <= epsilon;
@@ -156,7 +156,7 @@ namespace BeatMapEvaluator
         /// <param name="lookDir">Which direction we are testing</param>
         /// <returns>
         /// <c><see cref="BeatMapEvaluator.json_MapNote"/></c> if note found,
-        /// <c>null</c> if note outside of range or no note found.
+        /// <c><see cref="Nullable">null</see></c> if note outside of range or no note found.
         /// </returns>
         public static json_MapNote? GetAdjacentNote(List<json_MapNote> list, json_MapNote note, NoteCutDirection lookDir) {
             int cell = note.cellIndex;
@@ -211,6 +211,39 @@ namespace BeatMapEvaluator
             Array.Copy(sorted, div, subdivCount);
             //Return the average of the subset
             return (int)div.Average();
+        }
+
+        /// <summary>
+        /// Evaluates if current block is part of a slider, if its the start of a slider this will return false
+        /// </summary>
+        /// <param name="current">The current note</param>
+        /// <param name="last">The last note with the same colour</param>
+        /// <param name="dotPrec">A dot notes precision</param>
+        /// <param name="sliderPrec">A non-dot note precision</param>
+        /// <returns><c><see cref="bool">True</see></c> if current is part of a slider</returns>
+        public static bool IsSlider(json_MapNote current, json_MapNote last, float dotPrec, float sliderPrec) {
+            int[] cutDir = {90, 270, 0, 180, 45, 135, 315, 225, 0};
+            const float deltaEpsilon = 1.0f / 32.0f;
+            const float angleEpsilon = 1.0f / 4.0f;
+
+            //if either the last or current note was a dot note
+            //use dot precision, otherwise use slider precision
+            bool stepHasDot = (current._dir | last._dir).HasFlag(NoteCutDirection.DotNote);
+            //Angular difference between the last cut direction and the current in degrees
+            int cutDiff = Math.Abs(cutDir[(int)current._dir] - cutDir[(int)last._dir]);
+            //if either the current or last note was a dot note, use dot precision otherwise use slider precision
+            float precision = stepHasDot ? dotPrec : sliderPrec;
+            //Get the time between the last note and the current note in beats
+            float timeDelta = current._time - last._time;
+
+            //If this or the last block is a dot note, use dotPrec to determine if it's a part of the same swing
+            //else check if theyre facing the same direction and use sliderPrec
+            //Or if the last block to the current is super close, it just assumes it was a part of the same swing.
+            //Or check if the block angle from the last is <= to 90deg and also < angleEpsilon precision
+            bool isSlider = (timeDelta <= precision && (stepHasDot || cutDiff == 0)) ||
+                            (timeDelta <= deltaEpsilon || (stepHasDot || cutDiff <= 90) &&
+                            (timeDelta <= angleEpsilon));
+            return isSlider;
         }
     }
 }

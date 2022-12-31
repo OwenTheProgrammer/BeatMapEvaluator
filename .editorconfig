@@ -6,3 +6,6 @@ dotnet_diagnostic.CS8602.severity = none
 
 # CS8600: Converting null literal or possible null value to non-nullable type.
 dotnet_diagnostic.CS8600.severity = none
+
+# IDE1006: Naming Styles
+dotnet_diagnostic.IDE1006.severity = silent

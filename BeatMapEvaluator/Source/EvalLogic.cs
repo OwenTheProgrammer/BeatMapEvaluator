@@ -4,6 +4,12 @@ using System.Linq;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Newtonsoft.Json.Linq;
+using Microsoft.VisualBasic.Logging;
+using System.Windows.Media;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement.ToolTip;
+using System.Runtime.Intrinsics.X86;
+using System.Windows.Documents;
+using System.Windows.Input;
 
 namespace BeatMapEvaluator
 {
@@ -106,7 +112,7 @@ namespace BeatMapEvaluator
 
 		//Audio Length in seconds
 		public float audioLength;
-		/// <summary>Seconds -> Beats if multiplied</summary>
+		/// <summary>60/bpm</summary>
 		public float beatsPerSecond;
 
 		public float bpm, njs;
@@ -159,8 +165,17 @@ namespace BeatMapEvaluator
 			//Wait for the tasks to finish
 			await Task.WhenAll(Cullers);
 			//Load the Swings per second for each hand
-			report.LeftHandSwings = LeftHandSwings;
-			report.RightHandSwings = RightHandSwings;
+			(int lhs, int rhs)[] swingRegistry = await Eval_SwingsPerSecond(0.4f, 0.3f);
+			//Split the swings to their arrays
+			int[] leftSwings = new int[swingRegistry.Length];
+			int[] rightSwings = new int[swingRegistry.Length];
+			for(int i = 0; i < swingRegistry.Length; i++) {
+				leftSwings[i] = swingRegistry[i].lhs;
+				rightSwings[i] = swingRegistry[i].rhs;
+			}
+
+            report.LeftHandSwings = leftSwings;
+			report.RightHandSwings = rightSwings;
 
 			report.note_OutOfRange = ((Task<List<json_MapNote>>)Cullers[0]).Result;
 			report.wall_OutOfRange = ((Task<List<json_MapObstacle>>)Cullers[1]).Result;
@@ -218,10 +233,6 @@ namespace BeatMapEvaluator
 		public Task Load_NotesToCache(json_DiffFileV2 diff) {
 			//Roud up how many seconds there are in the audio for swings/second
 			int cellCount = (int)Math.Ceiling(audioLength);
-			
-			//lefty gang btw
-			LeftHandSwings = new int[cellCount];
-			RightHandSwings = new int[cellCount];
 
 			int noteCount = 0;
 			foreach(var note in diff._notes) {
@@ -230,14 +241,6 @@ namespace BeatMapEvaluator
 				if(note._type != NoteType.Bomb) {
 					//get curent cell index
 					int index = (int)Math.Floor(note.realTime);
-
-					//Add swing to current swings/second cell
-					if(note._type == NoteType.Left) {
-						LeftHandSwings[index]++;
-					} else {
-						RightHandSwings[index]++;
-					}
-
 					noteCount++;
 				}
 
@@ -539,5 +542,59 @@ namespace BeatMapEvaluator
 
 			return Task.FromResult(offenders);
 		}
+
+		/// <summary>
+		/// Calculates the swings per second with slider logic in place.
+		/// </summary>
+		/// <remarks>
+		/// <c>Note:</c>
+		/// I just pretend multiple of the same coloured note on the same time step dont exist.
+		/// </remarks>
+		/// <returns>List of (left,right) swings/second</returns>
+		public Task<(int, int)[]> Eval_SwingsPerSecond(float dotPrec, float sliderPrec) {
+			int cellCount = (int)Math.Ceiling(audioLength);
+			(int left, int right)[] swingList = new (int, int)[cellCount];
+
+			float[] noteKeys = noteCache.Keys.ToArray();
+
+			List<json_MapNote> lastCell = noteCache[noteKeys[0]];
+			json_MapNote? lastLeft = lastCell.Find(note => note._type == NoteType.Left);
+			json_MapNote? lastRight = lastCell.Find(note => note._type == NoteType.Right);
+			if(lastLeft != null) swingList[0].left++;
+			if(lastRight != null) swingList[0].right++;
+
+			for (int i = 1; i < noteKeys.Length; i++) {
+				//Get the second we are currently looking at for swings/second
+				int swingCellIndex = (int)Math.Floor(noteKeys[i] * beatsPerSecond);
+				List<json_MapNote> cell = noteCache[noteKeys[i]];
+
+				//Find left and right blocks in the time step
+				json_MapNote? left = cell.Find(note => note._type == NoteType.Left);
+				json_MapNote? right = cell.Find(note => note._type == NoteType.Right);
+
+				//if there is a block between the last and current block
+				//evaluate if its part of a slider and add to the swing/second
+				if(lastLeft != null && left != null) { 
+					bool leftSlider = Utils.IsSlider(left, lastLeft, dotPrec, sliderPrec);
+					if(!leftSlider) swingList[swingCellIndex].left++;
+				} else if(left != null) {
+					swingList[swingCellIndex].left++;
+				}
+				if(lastRight != null && right != null) { 
+					bool rightSlider = Utils.IsSlider(right, lastRight, dotPrec, sliderPrec);
+                    if(!rightSlider) swingList[swingCellIndex].right++;
+                } else if(right != null) {
+					swingList[swingCellIndex].right++;
+				}
+
+				//Set the last values to the current values
+				if(lastLeft == null || left != null)
+					lastLeft = left;
+				if(lastRight == null || right != null)
+					lastRight = right;
+            }
+
+			return Task.FromResult(swingList);
+        }
 	}
 }
