@@ -2,6 +2,7 @@
 using System.IO;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using System.Linq;
 
 namespace BeatMapEvaluator
 {
@@ -37,9 +38,14 @@ namespace BeatMapEvaluator
         /// <param name="info">The maps json info</param>
         /// <param name="filePath">the output filepath</param>
         public static async Task ExportReport(MapStorageLayout[] layout, json_MapInfo info, string filePath) {
+            //if there are no problems we dont need to do anything
+            if(layout.All(sts => sts.reportStatus == ReportStatus.Passed)) {
+                return;
+            }
             List<string> buffer = new List<string>();
             string _title = "- " + layout[0].bsr + ": " + info._songName + " -";
             buffer.Add(_title);
+
 
             for(int l = 0; l < layout.Length; l++) {
                 if(layout[l].reportStatus == ReportStatus.Passed)
