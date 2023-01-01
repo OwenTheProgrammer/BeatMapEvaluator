@@ -124,10 +124,10 @@ namespace BeatMapEvaluator
 					evalStorage[info.mapBSR].Item2[index] = layout;
 
 					//If the eval didnt pass, make a report file
-					if(layout.reportStatus != ReportStatus.Passed) {
+					/*if(layout.reportStatus != ReportStatus.Passed) {
 						string reportPath = Path.Combine(reportFolder, info.mapBSR + ".txt");
 						await UserConsole.ExportReport(layout, info, reportPath);
-					}
+					}*/
 					if(status == ReportStatus.None) { 
 						if(layout.reportStatus == ReportStatus.Error) 
 							status = ReportStatus.Error;
@@ -135,10 +135,17 @@ namespace BeatMapEvaluator
 							status = ReportStatus.Failed;
 					}
 					//Release memory
+					//layout.ClearDiff();
+				}
+				//
+                string reportPath = Path.Combine(reportFolder, info.mapBSR + ".txt");
+                await UserConsole.ExportReport(evalStorage[info.mapBSR].Item2, info, reportPath);
+
+				foreach(var layout in evalStorage[info.mapBSR].Item2) {
 					layout.ClearDiff();
 				}
 
-				info.beatmapSets = null;
+                info.beatmapSets = null;
 				info.standardBeatmap = null;
 				evalStorage[info.mapBSR].Item1.beatmapSets = null;
 				evalStorage[info.mapBSR].Item1.standardBeatmap = null;

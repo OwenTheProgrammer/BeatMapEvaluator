@@ -165,7 +165,7 @@ namespace BeatMapEvaluator
 			//Wait for the tasks to finish
 			await Task.WhenAll(Cullers);
 			//Load the Swings per second for each hand
-			(int lhs, int rhs)[] swingRegistry = await Eval_SwingsPerSecond(0.4f, 0.3f);
+			(int lhs, int rhs)[] swingRegistry = await Eval_SwingsPerSecond(1.0f/6.0f, 1.0f/5.0f);
 			//Split the swings to their arrays
 			int[] leftSwings = new int[swingRegistry.Length];
 			int[] rightSwings = new int[swingRegistry.Length];
